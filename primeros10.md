@@ -1,2 +1,3 @@
-# 1-10 Ejercicios en Lenguaje Python...
+# 1-10 Ejercicios 
+## Convierte de Celsius a Fharenheit
 ```
