@@ -1,5 +1,5 @@
 # Convertir temperatura de Celsius a Fahrenheit
-```assembly
+
 /*=======================================================
  * Programa:     temperatura.s
  * Autor:        IVAN MENDOZA
@@ -85,4 +85,3 @@ main:
     add     sp, sp, #16
     ldp     x29, x30, [sp], #16
     ret
-```
