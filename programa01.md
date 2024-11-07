@@ -1,4 +1,4 @@
-# Convierte de Celsius a Fharenheit
+# Convertir temperatura de Celsius a Fahrenheit
 ```assembly
 /*=======================================================
  * Programa:     temperatura.s
