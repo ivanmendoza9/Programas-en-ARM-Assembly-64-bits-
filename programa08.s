@@ -9,7 +9,7 @@
  * Compilación:  as -o fibonacci.o fibonacci.s
  *               gcc -o fibonacci fibonacci.o
  * Ejecución:    ./fibonacci
- * 
+ * LINK DE ASCIINEMA Y DEBUG: https://asciinema.org/a/80jw6xZVc1AMYzC0LPgfzWJC2
  * Código equivalente en C:
  * -----------------------------------------------------
  * #include <stdio.h>
