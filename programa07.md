@@ -1,1 +1,0 @@
-# Factorial de un número
