@@ -9,7 +9,7 @@
  * Compilación:  as -o numeroprimo.o numeroprimo.s
  *               gcc -o numeroprimo numeroprimo.o
  * Ejecución:    ./numeroprimo
- * LINK DE ASCIINEMA Y DEBUG: https://asciinema.org/a/XXXXXXXXXXXX
+ * LINK DE ASCIINEMA Y DEBUG: https://asciinema.org/a/U4ObqrdK1iwKwD4rLiSAubaxz
  * Código equivalente en C:
  * -----------------------------------------------------
  * #include <stdio.h>
