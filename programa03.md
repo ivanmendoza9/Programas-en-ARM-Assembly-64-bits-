@@ -1,1 +1,0 @@
-# Resta de dos números
