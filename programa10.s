@@ -9,7 +9,7 @@
  *               gcc -o inversa inversa.o
  * Ejecución:    ./inversa
  * Versión:      1.0
- * LINK DE ASCIINEMA Y DEBUG: 
+ * LINK DE ASCIINEMA Y DEBUG: https://asciinema.org/a/9q8WHCMvZRFvQbhQbRq8vDnsH
  * Código equivalente en C:
  * -----------------------------------------------------
  * #include <stdio.h>
