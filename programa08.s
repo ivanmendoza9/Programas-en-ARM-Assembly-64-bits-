@@ -9,7 +9,24 @@
  * Compilación:  as -o fibonacci.o fibonacci.s
  *               gcc -o fibonacci fibonacci.o
  * Ejecución:    ./fibonacci
- * LINK ASCIINEMA Y DEBUG: 
+ * 
+ * Código equivalente en C:
+ * -----------------------------------------------------
+ * #include <stdio.h>
+ * int main() {
+ *     long n1 = 0, n2 = 1, nextTerm;
+ *     printf("Serie de Fibonacci:\n");
+ *     printf("%ld %ld ", n1, n2);
+ *     for (int i = 2; i < 10; i++) {
+ *         nextTerm = n1 + n2;
+ *         printf("%ld ", nextTerm);
+ *         n1 = n2;
+ *         n2 = nextTerm;
+ *     }
+ *     printf("\n");
+ *     return 0;
+ * }
+ * -----------------------------------------------------
  ===========================================================*/
 
     .data
@@ -24,16 +41,16 @@ format: .string "%ld "                      // Formato para imprimir números
 main:
     // Guardar registros
     stp     x29, x30, [sp, -16]!   // Guardar frame pointer y link register
-    mov     x29, sp                 // Actualizar frame pointer
+    mov     x29, sp                // Actualizar frame pointer
 
     // Imprimir mensaje inicial
     adr     x0, msg1
     bl      printf
 
     // Inicializar variables
-    mov     x19, #0                 // Primer número (n-2)
-    mov     x20, #1                 // Segundo número (n-1)
-    mov     x21, #0                 // Resultado actual
+    mov     x19, #0                // Primer número (n-2)
+    mov     x20, #1                // Segundo número (n-1)
+    mov     x21, #0                // Resultado actual
     mov     x22, #10               // Contador (calcularemos 10 números)
 
 print_first:
@@ -77,4 +94,4 @@ end:
     // Restaurar registros y retornar
     mov     x0, #0                 // Código de retorno 0
     ldp     x29, x30, [sp], #16    // Restaurar frame pointer y link register
-    ret                       // Regresar del programa
+    ret                            // Regresar del programa
