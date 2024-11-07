@@ -9,7 +9,7 @@
  *               gcc -o suma suma.o
  * Ejecución:    ./suma
  * Versión:      1.0
- *
+ * Link ASCIINEMA: https://asciinema.org/a/687749
  * Código equivalente en C:
  * -----------------------------------------------------
  * #include <stdio.h>
