@@ -10,7 +10,8 @@
  *               gcc -o temperatura temperatura.o
  * Ejecución:    ./temperatura
  * Versión:      1.0
- *
+ * Link ASCIINEMA: https://asciinema.org/a/687741
+ * Link DEBUG: https://asciinema.org/a/687742
  * Código equivalente en c:
  * -----------------------------------------------------
  * #include <stdio.h> 
