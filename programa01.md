@@ -1,5 +1,4 @@
-# 1-10 Ejercicios 
-## Convierte de Celsius a Fharenheit
+# Convierte de Celsius a Fharenheit
 ```assembly
 /*=======================================================
  * Programa:     temperatura.s
@@ -87,32 +86,3 @@ main:
     ldp     x29, x30, [sp], #16
     ret
 ```
-
-## Makefile 
-
-A continuación, se proporciona un **Makefile** que automatiza el proceso de ensamblado, enlazado, ejecución, depuración con GDB y subida del código fuente a GitHub. Este Makefile está diseñado para ser utilizado en un entorno Raspbian 64 bits con arquitectura ARM64.
-
-```makefile
-# Nombre del archivo de salida
-OUTPUT = temperatura
-
-# Archivos fuente
-ASM_SRC = temperatura.s
-OBJ_FILE = temperatura.o
-
-# Archivos de formato para entrada y salida
-PROMPT_FILE = prompt
-FORMAT_IN_FILE = format_in
-FORMAT_OUT_FILE = format_out
-
-# Directorios de compilación
-SRC_DIR = .
-OBJ_DIR = ./obj
-BIN_DIR = ./bin
-
-# Comandos de compilación y enlace
-AS = as
-CC = gcc
-LD = ld
-
-# Repositorio GitHub
