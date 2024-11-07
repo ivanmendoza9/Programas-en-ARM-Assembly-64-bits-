@@ -1,5 +1,5 @@
 # Suma de dos números
-```assembly
+
 /*=======================================================
  * Programa:     suma_flotantes.s
  * Autor:        IVAN MENDOZA
@@ -71,5 +71,4 @@ main:
     add sp, sp, #16 // Restaurar el puntero de pila
     ldp x29, x30, [sp], 16 // Restaurar el puntero de marco y el enlace de retorno
     ret // Regresar del programa
-
-```
+    
