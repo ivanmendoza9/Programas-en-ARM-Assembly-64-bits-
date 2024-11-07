@@ -9,7 +9,34 @@
  * Compilación:  as -o numeroprimo.o numeroprimo.s
  *               gcc -o numeroprimo numeroprimo.o
  * Ejecución:    ./numeroprimo
- * LINK DE ASCIINEMA Y DEBUG: 
+ * LINK DE ASCIINEMA Y DEBUG: https://asciinema.org/a/XXXXXXXXXXXX
+ * Código equivalente en C:
+ * -----------------------------------------------------
+ * #include <stdio.h>
+ * int main() {
+ *     int N, i, flag = 1;
+ *     printf("Ingresa un número para verificar si es primo: ");
+ *     scanf("%d", &N);
+ *     
+ *     if (N <= 1) {
+ *         flag = 0; // No es primo si es <= 1
+ *     } else {
+ *         for (i = 2; i * i <= N; i++) {
+ *             if (N % i == 0) {
+ *                 flag = 0; // No es primo si tiene divisores
+ *                 break;
+ *             }
+ *         }
+ *     }
+ *     
+ *     if (flag) {
+ *         printf("El número %d es primo.\n", N);
+ *     } else {
+ *         printf("El número %d no es primo.\n", N);
+ *     }
+ *     return 0;
+ * }
+ * -----------------------------------------------------
  ===========================================================*/
 
     .data
@@ -78,4 +105,4 @@ end_program:
     // Restaurar el puntero de pila y regresar
     add sp, sp, #16         // Restaurar el puntero de pila
     ldp x29, x30, [sp], 16  // Restaurar el puntero de marco y el enlace de retorno
-    ret                      // Regresar del programa
+    ret                     // Regresar del programa
