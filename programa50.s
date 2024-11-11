@@ -11,25 +11,25 @@
 
 /* Código en C equivalente:
 
-#include <stdio.h>
-
-void EscribirArchivo(int num) {
-    FILE *file = fopen("salida.txt", "w"); // Abrir archivo para escritura (crea o trunca)
-    if (file == NULL) {
-        perror("Error al abrir el archivo");
-        return;
-    }
-    
-    fprintf(file, "%d\n", num); // Escribir el número en el archivo con un salto de línea
-    
-    fclose(file); // Cerrar el archivo
-}
-
-int main() {
-    int num = 12345; // Número a escribir
-    EscribirArchivo(num);
-    return 0;
-}
+* #include <stdio.h>
+* 
+* void EscribirArchivo(int num) {
+*     FILE *file = fopen("salida.txt", "w"); // Abrir archivo para escritura (crea o trunca)
+*     if (file == NULL) {
+*         perror("Error al abrir el archivo");
+*         return;
+*     }
+*     
+*     fprintf(file, "%d\n", num); // Escribir el número en el archivo con un salto de línea
+*     
+*     fclose(file); // Cerrar el archivo
+* }
+* 
+* int main() {
+*     int num = 12345; // Número a escribir
+*     EscribirArchivo(num);
+*     return 0;
+* }
 */
 
 .global EscribirArchivo
