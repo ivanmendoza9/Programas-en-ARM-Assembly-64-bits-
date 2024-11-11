@@ -12,31 +12,31 @@
 
 /* Código en C equivalente:
 
-#include <stdio.h>
-
-int FuncionDePrueba(int iteraciones) {
-    int x1 = 1; // Acumulador
-    int x3 = 7; // Constante para multiplicación
-    int x4 = 3; // Constante para división
-    
-    for (int i = 0; i < iteraciones; i++) {
-        // Realizar algunas operaciones matemáticas
-        x1 = x1 + x1;    // x1 = x1 + x1
-        int x2 = x1 >> 1; // x2 = x1 >> 1
-        x1 = x1 + x2;    // x1 = x1 + x2
-        x1 = x1 * x3;    // x1 = x1 * 7
-        x1 = x1 / x4;    // x1 = x1 / 3
-    }
-    
-    return x1; // Retornar el resultado
-}
-
-int main() {
-    int iteraciones = 5;
-    int resultado = FuncionDePrueba(iteraciones);
-    printf("Resultado: %d\n", resultado);
-    return 0;
-}
+* #include <stdio.h>
+* 
+* int FuncionDePrueba(int iteraciones) {
+*     int x1 = 1; // Acumulador
+*     int x3 = 7; // Constante para multiplicación
+*     int x4 = 3; // Constante para división
+*     
+*     for (int i = 0; i < iteraciones; i++) {
+*         // Realizar algunas operaciones matemáticas
+*         x1 = x1 + x1;    // x1 = x1 + x1
+*         int x2 = x1 >> 1; // x2 = x1 >> 1
+*         x1 = x1 + x2;    // x1 = x1 + x2
+*         x1 = x1 * x3;    // x1 = x1 * 7
+*         x1 = x1 / x4;    // x1 = x1 / 3
+*     }
+*     
+*     return x1; // Retornar el resultado
+* }
+* 
+* int main() {
+*     int iteraciones = 5;
+*     int resultado = FuncionDePrueba(iteraciones);
+*     printf("Resultado: %d\n", resultado);
+*     return 0;
+* }
 */
 
 .global FuncionDePrueba
@@ -81,4 +81,4 @@ fin:
     // Restaurar registros
     ldp x19, x20, [sp], #16
     ldp x29, x30, [sp], #16
-    ret
+    ret 
