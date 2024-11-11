@@ -1,13 +1,13 @@
 /*=========================================================
- * Programa:     operaciones_bits.s
+ * Programa:     operacion_bits.s
  * Autor:        IVAN MENDOZA
  * Fecha:        11 de noviembre de 2024
  * Descripción:  Implementa operaciones de establecer, borrar
  *               y alternar un bit en una posición específica
  *               de un número en ensamblador ARM64.
- * Compilación:  as -o operaciones_bits.o operaciones_bits.s
- *               gcc -o operaciones_bits operaciones_bits.o
- * Ejecución:    ./operaciones_bits
+ * Compilación:  as -o operacion_bits.o operacion_bits.s
+ *               gcc -o operacion_bits operacion_bits.o
+ * Ejecución:    ./operacion_bits
  =========================================================*/
 
 /*=========================================================
