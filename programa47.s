@@ -12,42 +12,41 @@
 
 /* Código en C equivalente 
 
-#include <stdio.h>
-
-int DetectOverflow(int a, int b) {
-    int sum = a + b;
-    
-    // Verificar desbordamiento positivo
-    if ((a > 0 && b > 0 && sum < 0)) {
-        return 1;  // Overflow
-    }
-    
-    // Verificar desbordamiento negativo
-    if ((a < 0 && b < 0 && sum >= 0)) {
-        return 1;  // Overflow
-    }
-    
-    return 0;  // No overflow
-}
-
-int main() {
-    int a = 2147483647; // Maximo valor de int (2^31 - 1)
-    int b = 1;
-    
-    int result = DetectOverflow(a, b);
-    if (result) {
-        printf("Overflow detected!\n");
-    } else {
-        printf("No overflow.\n");
-    }
-
-    return 0;
-}
+* #include <stdio.h>
+* 
+* int DetectOverflow(int a, int b) {
+*     int sum = a + b;
+*     
+*     // Verificar desbordamiento positivo
+*     if ((a > 0 && b > 0 && sum < 0)) {
+*         return 1;  // Overflow
+*     }
+*     
+*     // Verificar desbordamiento negativo
+*     if ((a < 0 && b < 0 && sum >= 0)) {
+*         return 1;  // Overflow
+*     }
+*     
+*     return 0;  // No overflow
+* }
+* 
+* int main() {
+*     int a = 2147483647; // Maximo valor de int (2^31 - 1)
+*     int b = 1;
+*     
+*     int result = DetectOverflow(a, b);
+*     if (result) {
+*         printf("Overflow detected!\n");
+*     } else {
+*         printf("No overflow.\n");
+*     }
+* 
+*     return 0;
+* }
 */
 
 .global DetectOverflow
 
-// Función para detectar desbordamiento en suma
 DetectOverflow:
     // Guardar registros
     stp x29, x30, [sp, #-16]!
