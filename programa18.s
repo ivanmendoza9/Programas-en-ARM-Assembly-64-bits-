@@ -11,49 +11,49 @@
  =========================================================*/
 
 /*=========================================================
-Código equivalente en C:
-------------------------------------------------------------
-#include <stdio.h>
-
-void merge(int arr[], int mid, int size) {
-    int temp[size];
-    int i = 0, j = mid, k = 0;
-
-    while (i < mid && j < size) {
-        if (arr[i] <= arr[j]) {
-            temp[k++] = arr[i++];
-        } else {
-            temp[k++] = arr[j++];
-        }
-    }
-
-    while (i < mid) {
-        temp[k++] = arr[i++];
-    }
-
-    while (j < size) {
-        temp[k++] = arr[j++];
-    }
-
-    for (i = 0; i < size; i++) {
-        arr[i] = temp[i];
-    }
-}
-
-void merge_sort(int arr[], int size) {
-    if (size < 2) {
-        return;
-    }
-
-    int mid = size / 2;
-
-    merge_sort(arr, mid);               // Llamada recursiva para la primera mitad
-    merge_sort(arr + mid, size - mid);  // Llamada recursiva para la segunda mitad
-
-    merge(arr, mid, size);              // Mezclar las dos mitades
-}
-------------------------------------------------------------
-=========================================================*/
+ * Código equivalente en C:
+ * ------------------------------------------------------------
+ * #include <stdio.h>
+ * 
+ * void merge(int arr[], int mid, int size) {
+ *     int temp[size];
+ *     int i = 0, j = mid, k = 0;
+ * 
+ *     while (i < mid && j < size) {
+ *         if (arr[i] <= arr[j]) {
+ *             temp[k++] = arr[i++];
+ *         } else {
+ *             temp[k++] = arr[j++];
+ *         }
+ *     }
+ * 
+ *     while (i < mid) {
+ *         temp[k++] = arr[i++];
+ *     }
+ * 
+ *     while (j < size) {
+ *         temp[k++] = arr[j++];
+ *     }
+ * 
+ *     for (i = 0; i < size; i++) {
+ *         arr[i] = temp[i];
+ *     }
+ * }
+ * 
+ * void merge_sort(int arr[], int size) {
+ *     if (size < 2) {
+ *         return;
+ *     }
+ * 
+ *     int mid = size / 2;
+ * 
+ *     merge_sort(arr, mid);               // Llamada recursiva para la primera mitad
+ *     merge_sort(arr + mid, size - mid);  // Llamada recursiva para la segunda mitad
+ * 
+ *     merge(arr, mid, size);              // Mezclar las dos mitades
+ * }
+ * ------------------------------------------------------------
+ =========================================================*/
 
 .section .data
 .section .text
