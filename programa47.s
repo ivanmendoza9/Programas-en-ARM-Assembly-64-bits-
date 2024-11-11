@@ -10,7 +10,7 @@
  * Ejecución:    ./DetectOverflow
  =========================================================*/
 
-/* Código en C equivalente 
+/* Código en C equivalente:
 
 * #include <stdio.h>
 * 
