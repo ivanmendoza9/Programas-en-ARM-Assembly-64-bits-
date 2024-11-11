@@ -11,27 +11,27 @@
 
 /* Código en C equivalente 
 
-#include <stdio.h>
-
-int LeerEntrada() {
-    char buffer[16];
-    fgets(buffer, sizeof(buffer), stdin); // Leer entrada desde stdin
-    
-    int result = 0;
-    int i = 0;
-    while (buffer[i] != '\n' && buffer[i] != '\0') {
-        result = result * 10 + (buffer[i] - '0'); // Convertir de ASCII a número
-        i++;
-    }
-    
-    return result; // Retornar el número leído
-}
-
-int main() {
-    int input = LeerEntrada();
-    printf("Número leído: %d\n", input);
-    return 0;
-}
+* #include <stdio.h>
+* 
+* int LeerEntrada() {
+*     char buffer[16];
+*     fgets(buffer, sizeof(buffer), stdin); // Leer entrada desde stdin
+*     
+*     int result = 0;
+*     int i = 0;
+*     while (buffer[i] != '\n' && buffer[i] != '\0') {
+*         result = result * 10 + (buffer[i] - '0'); // Convertir de ASCII a número
+*         i++;
+*     }
+*     
+*     return result; // Retornar el número leído
+* }
+* 
+* int main() {
+*     int input = LeerEntrada();
+*     printf("Número leído: %d\n", input);
+*     return 0;
+* }
 */
 
 .global LeerEntrada
