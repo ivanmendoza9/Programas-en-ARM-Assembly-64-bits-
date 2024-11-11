@@ -1,13 +1,12 @@
 /*=========================================================
- * Programa:     operacion_bits.s
+ * Programa:     contar_bits.s
  * Autor:        IVAN MENDOZA
  * Fecha:        11 de noviembre de 2024
- * Descripción:  Implementa operaciones de establecer, borrar
- *               y alternar un bit en una posición específica
- *               de un número en ensamblador ARM64.
- * Compilación:  as -o operacion_bits.o operacion_bits.s
- *               gcc -o operacion_bits operacion_bits.o
- * Ejecución:    ./operacion_bits
+ * Descripción:  Cuenta la cantidad de bits activados (1) en un
+ *               número en ensamblador ARM64.
+ * Compilación:  as -o contar_bits.o contar_bits.s
+ *               gcc -o contar_bits contar_bits.o
+ * Ejecución:    ./contar_bits
  =========================================================*/
 
 /*=========================================================
@@ -15,36 +14,19 @@
  * ---------------------------------------------------------
  * #include <stdio.h>
  * 
- * // Establecer un bit en la posición 'n'
- * void establecer_bit(unsigned int *valor, int n) {
- *     *valor |= (1 << n);
- * }
- * 
- * // Borrar un bit en la posición 'n'
- * void borrar_bit(unsigned int *valor, int n) {
- *     *valor &= ~(1 << n);
- * }
- * 
- * // Alternar un bit en la posición 'n'
- * void alternar_bit(unsigned int *valor, int n) {
- *     *valor ^= (1 << n);
+ * // Función para contar los bits activados (1)
+ * int contar_bits(unsigned int numero) {
+ *     int contador = 0;
+ *     while (numero) {
+ *         contador += (numero & 1);  // Verifica el bit menos significativo
+ *         numero >>= 1;              // Desplaza a la derecha
+ *     }
+ *     return contador;
  * }
  * 
  * int main() {
  *     unsigned int numero = 29;  // Ejemplo de número
- *     int posicion = 3;          // Ejemplo de posición de bit
- *     
- *     printf("Valor original: %u\n", numero);
- *     
- *     establecer_bit(&numero, posicion);
- *     printf("Después de establecer el bit: %u\n", numero);
- *     
- *     borrar_bit(&numero, posicion);
- *     printf("Después de borrar el bit: %u\n", numero);
- *     
- *     alternar_bit(&numero, posicion);
- *     printf("Después de alternar el bit: %u\n", numero);
- *     
+ *     printf("Número de bits activados: %d\n", contar_bits(numero));
  *     return 0;
  * }
  * ---------------------------------------------------------
@@ -52,25 +34,17 @@
 
 /* Sección de código */
 .section .text
-.global establecer_bit
-.global borrar_bit
-.global alternar_bit
+.global contar_bits
 
-// Establecer un bit en la posición 'n'
-establecer_bit:
-    lsl x2, x1, #1       // x2 = 1 << n
-    orr x0, x0, x2       // resultado = valor | (1 << n)
-    ret
+contar_bits:
+    mov x1, 0          // Contador de bits activados
+    mov x2, x0         // Copia el número a x2
 
-// Borrar un bit en la posición 'n'
-borrar_bit:
-    lsl x2, x1, #1       // x2 = 1 << n
-    neg x2, x2           // x2 = -(1 << n) (obtener complemento)
-    and x0, x0, x2       // resultado = valor & ~(1 << n)
-    ret
+.loop:
+    and x3, x2, #1     // Verifica el bit menos significativo
+    add x1, x1, x3     // Incrementa el contador si el bit es 1
+    lsr x2, x2, #1     // Desplaza a la derecha
+    cbnz x2, .loop     // Si x2 no es cero, continúa
 
-// Alternar un bit en la posición 'n'
-alternar_bit:
-    lsl x2, x1, #1       // x2 = 1 << n
-    eor x0, x0, x2       // resultado = valor ^ (1 << n)
+    mov x0, x1         // El resultado se almacena en x0
     ret
