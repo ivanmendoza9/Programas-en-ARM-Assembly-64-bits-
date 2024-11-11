@@ -9,28 +9,28 @@
  =========================================================*/
 
 /* Código en C:
-#include <stdio.h>
-
-// Función para generar un número pseudoaleatorio
-unsigned int GenerarAleatorio(unsigned int semilla) {
-    return (semilla * 1103515245 + 12345) & 0x7FFFFFFF;
-}
-
-int main() {
-    unsigned int semilla;
-
-    // Leer la semilla desde la entrada
-    printf("Ingrese la semilla: ");
-    scanf("%u", &semilla);
-
-    // Generar el número aleatorio
-    unsigned int aleatorio = GenerarAleatorio(semilla);
-
-    // Mostrar el resultado
-    printf("Número aleatorio generado: %u\n", aleatorio);
-
-    return 0;
-}
+* #include <stdio.h>
+* 
+* // Función para generar un número pseudoaleatorio
+* unsigned int GenerarAleatorio(unsigned int semilla) {
+*     return (semilla * 1103515245 + 12345) & 0x7FFFFFFF;
+* }
+* 
+* int main() {
+*     unsigned int semilla;
+* 
+*     // Leer la semilla desde la entrada
+*     printf("Ingrese la semilla: ");
+*     scanf("%u", &semilla);
+* 
+*     // Generar el número aleatorio
+*     unsigned int aleatorio = GenerarAleatorio(semilla);
+* 
+*     // Mostrar el resultado
+*     printf("Número aleatorio generado: %u\n", aleatorio);
+* 
+*     return 0;
+* }
 */
 
 .global GenerarAleatorio
