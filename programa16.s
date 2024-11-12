@@ -37,41 +37,148 @@
  * -----------------------------------------------------
  =========================================================*/
 
-.section .data
-.section .text
-.global ordenamiento_burbuja
+.data
+array:      .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // Espacio para 10 números
+arr_len:    .word 10                               // Longitud máxima del arreglo
+msg_input:  .asciz "Ingrese 10 números enteros:\n"
+msg_num:    .asciz "Número %d: "
+scan_fmt:   .asciz "%d"
+msg_before: .asciz "Arreglo antes de ordenar:\n"
+msg_after:  .asciz "Arreglo después de ordenar:\n"
+msg_elem:   .asciz "%d "
+msg_nl:     .asciz "\n"
 
-// Función de ordenamiento burbuja en ARM64 Assembly
-// Parámetros de entrada: x0 (puntero al arreglo), x1 (número de elementos)
-// Retorno: el arreglo ordenado en orden ascendente (se modifica en su lugar)
+.text
+.global main
+main:
+    // Guardar registros
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
 
-ordenamiento_burbuja:
-    mov x2, x1              // Guardar el tamaño del arreglo en x2 para el bucle externo
+    // Imprimir mensaje de entrada
+    adrp x0, msg_input
+    add x0, x0, :lo12:msg_input
+    bl printf
 
-bucle_externo:
-    sub x2, x2, 1           // Disminuir el tamaño del bucle externo en cada iteración
-    mov x3, 0               // Reiniciar índice para el bucle interno
+    // Inicializar para lectura de números
+    mov w22, #0                  // Contador para entrada
+input_loop:
+    // Verificar si hemos leído 10 números
+    cmp w22, #10
+    bge input_done
 
-bucle_interno:
-    cmp x3, x2              // Comparar el índice con el límite
-    bge fin_bucle_interno   // Si alcanzamos el límite, salir del bucle interno
+    // Imprimir prompt para número actual
+    adrp x0, msg_num
+    add x0, x0, :lo12:msg_num
+    add w1, w22, #1
+    bl printf
 
-    ldr w4, [x0, x3, lsl #2]       // Cargar el elemento actual en w4
-    add x6, x3, 1                  // Calcular el índice del siguiente elemento
-    ldr w5, [x0, x6, lsl #2]       // Cargar el siguiente elemento en w5
-    cmp w4, w5                     // Comparar el elemento actual con el siguiente
+    // Preparar para scanf
+    adrp x0, scan_fmt
+    add x0, x0, :lo12:scan_fmt
+    adrp x1, array
+    add x1, x1, :lo12:array
+    lsl w2, w22, #2              // Multiplicar índice por 4
+    add x1, x1, w2, UXTW        // Añadir offset al array
+    bl scanf
 
-    ble siguiente                  // Si el actual <= siguiente, pasar al siguiente par
+    add w22, w22, #1            // Incrementar contador
+    b input_loop
 
+input_done:
+    // Imprimir mensaje inicial
+    adrp x0, msg_before
+    add x0, x0, :lo12:msg_before
+    bl printf
+
+    // Imprimir arreglo original
+    bl print_array
+
+    // Preparar para ordenamiento burbuja
+    adrp x0, arr_len
+    add x0, x0, :lo12:arr_len
+    ldr w0, [x0]                // w0 = longitud del arreglo
+    mov w1, w0                  // w1 = contador externo
+
+outer_loop:
+    cmp w1, #1                  // Comparar contador con 1
+    ble done_sort               // Si <= 1, terminamos
+    
+    mov w2, #0                  // w2 = índice para bucle interno
+    sub w3, w1, #1             // w3 = límite del bucle interno
+
+inner_loop:
+    cmp w2, w3                  // Comparar índice con límite
+    bge end_inner              // Si >= límite, terminar bucle interno
+
+    // Cargar elementos a comparar
+    adrp x4, array
+    add x4, x4, :lo12:array
+    lsl w5, w2, #2             // w5 = índice * 4
+    add x5, x4, w5, UXTW       // x5 = dirección del elemento actual
+    ldr w6, [x5]               // w6 = elemento actual
+    ldr w7, [x5, #4]           // w7 = siguiente elemento
+
+    // Comparar y intercambiar si es necesario
+    cmp w6, w7                  // Comparar elementos
+    ble no_swap                // Si están en orden, no intercambiar
+    
     // Intercambiar elementos
-    str w5, [x0, x3, lsl #2]       // Guardar el siguiente en la posición actual
-    str w4, [x0, x6, lsl #2]       // Guardar el actual en la posición siguiente
+    str w7, [x5]               // Guardar elemento menor primero
+    str w6, [x5, #4]           // Guardar elemento mayor después
 
-siguiente:
-    add x3, x3, 1                  // Incrementar el índice para el bucle interno
-    b bucle_interno                // Volver al inicio del bucle interno
+no_swap:
+    add w2, w2, #1             // Incrementar índice interno
+    b inner_loop               // Continuar bucle interno
 
-fin_bucle_interno:
-    cmp x2, 1                      // Comprobar si el tamaño del bucle externo es 1
-    bgt bucle_externo              // Si es mayor que 1, continuar con el bucle externo
-    ret                            // Terminar la función
+end_inner:
+    sub w1, w1, #1             // Decrementar contador externo
+    b outer_loop               // Continuar bucle externo
+
+done_sort:
+    // Imprimir mensaje final
+    adrp x0, msg_after
+    add x0, x0, :lo12:msg_after
+    bl printf
+
+    // Imprimir arreglo ordenado
+    bl print_array
+
+    // Restaurar y retornar
+    ldp x29, x30, [sp], 16
+    ret
+
+// Subrutina para imprimir el arreglo
+print_array:
+    stp x29, x30, [sp, -16]!    // Guardar registros
+    
+    adrp x19, array             // Cargar dirección del arreglo
+    add x19, x19, :lo12:array
+    
+    adrp x20, arr_len
+    add x20, x20, :lo12:arr_len
+    ldr w20, [x20]              // Cargar longitud
+    
+    mov w21, #0                 // Inicializar contador
+
+print_loop:
+    cmp w21, w20                // Comparar contador con longitud
+    bge print_end               // Si terminamos, salir
+    
+    // Imprimir elemento actual
+    adrp x0, msg_elem
+    add x0, x0, :lo12:msg_elem
+    ldr w1, [x19, w21, UXTW #2] // Cargar elemento actual
+    bl printf
+    
+    add w21, w21, #1            // Incrementar contador
+    b print_loop
+
+print_end:
+    // Imprimir nueva línea
+    adrp x0, msg_nl
+    add x0, x0, :lo12:msg_nl
+    bl printf
+    
+    ldp x29, x30, [sp], 16      // Restaurar registros
+    ret
