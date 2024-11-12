@@ -4,6 +4,7 @@
  * Fecha:        9 de noviembre de 2024
  * Descripción:  Encuentra el valor mínimo en un arreglo de números ingresados por el usuario.
  *               El programa finaliza cuando se ingresa el valor 0.
+ * Link ASCII: https://asciinema.org/a/JN35i70vSkGp7OUTmsOOXjN9u
  *
  * Compilación:  as -o minimo_array.o minimo_array.s
  *               gcc -o minimo_array minimo_array.o -no-pie -lc
