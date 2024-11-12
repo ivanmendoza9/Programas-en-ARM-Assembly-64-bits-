@@ -29,27 +29,40 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.global ascii_a_entero
+    .data
+msg_ingreso:    .string "Ingrese un número entero (0-9): "
+msg_resultado:  .string "El carácter ASCII es: %c\n"
+formato_int:    .string "%d"     // Formato para leer entero
+numero:         .word 0          // Variable para almacenar el número
 
-ascii_a_entero:
-    mov w1, #0           // Inicializar el resultado en 0
-    mov x2, #0           // Índice de posición en la cadena (64 bits para el offset)
+    .text
+    .global main
+    .align 2
 
-1:
-    ldrb w3, [x0, x2]    // Leer el siguiente carácter de la cadena (con offset en x2)
-    cmp w3, #0           // ¿Es el final de la cadena (valor nulo)?
-    beq fin              // Si es el final de la cadena, salir del bucle
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
 
-    sub w3, w3, #'0'     // Convertir ASCII a dígito (restar '0')
-    
-    // Multiplicar el resultado acumulado por 10
-    mov w4, #10          // Usar un registro temporal para la constante 10
-    mul w1, w1, w4       // Multiplicar w1 por 10 usando w4
-    add w1, w1, w3       // Sumar el dígito al resultado acumulado
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
 
-    add x2, x2, #1       // Avanzar al siguiente carácter
-    b 1b                 // Repetir
+    // Leer número entero
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
 
-fin:
-    mov w0, w1           // Colocar el resultado en w0 para retornar
+    // Convertir entero a ASCII
+    adr     x0, numero
+    ldr     w0, [x0]            // Cargar el número
+    add     w1, w0, #48         // Sumar 48 (ASCII '0') para obtener el carácter
+
+    // Mostrar resultado
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
     ret
