@@ -15,9 +15,8 @@
 - https://asciinema.org/a/9WeaPiN8f8ao6SmAyjmzbTpO2
 
 ## Programas 21-30
-- LINK: INCLUYEN COMPILADOR Y DEBUGGER
-- https://asciinema.org/a/iidbZbiaZA7iZ6RHKSz32UhIq
-- 
+- LINK: INCLUYEN COMPILADOR Y DEBUGGER (ESTA VEZ SE HIZO UN VIDEO PARA LOS PROGRAMAS DEL 21-30)
+- https://asciinema.org/a/aEjuQ0jFFw5fzPC1qKSopEyts
 
 ## Programas 31-40
 - LINK:
