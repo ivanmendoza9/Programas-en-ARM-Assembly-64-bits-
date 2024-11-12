@@ -27,19 +27,46 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.global longitud_cadena
+    .data
+msg_ingreso:    .string "Ingrese una cadena: "
+msg_resultado:  .string "La longitud de la cadena es: %d\n"
+buffer:         .skip 100        // Buffer para almacenar la cadena
+formato_str:    .string "%[^\n]" // Leer hasta encontrar newline
 
-.section .text
-longitud_cadena:
-    mov x1, 0                      // Inicializar contador a 0
+    .text
+    .global main
+    .align 2
 
-.loop:
-    ldrb w2, [x0, x1]             // Cargar el siguiente byte de la cadena
-    cmp w2, #0                     // Comparar con 0 (fin de cadena)
-    beq .done                      // Si es 0, saltar a la sección done
-    add x1, x1, #1                 // Incrementar contador
-    b .loop                        // Volver al inicio del bucle
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
 
-.done:
-    mov x0, x1                     // Retornar la longitud en x0
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer cadena
+    adr     x0, formato_str
+    adr     x1, buffer
+    bl      scanf
+
+    // Calcular longitud
+    adr     x0, buffer
+    mov     x1, #0              // Contador de caracteres
+
+contar_loop:
+    ldrb    w2, [x0, x1]       // Cargar carácter
+    cbz     w2, fin_conteo      // Si es 0, fin de cadena
+    add     x1, x1, #1         // Incrementar contador
+    b       contar_loop
+
+fin_conteo:
+    // Mostrar resultado
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
     ret
