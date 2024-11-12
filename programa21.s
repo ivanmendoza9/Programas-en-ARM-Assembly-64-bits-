@@ -25,41 +25,142 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.global transponer_matriz
+    .arch armv8-a              // Especifica la arquitectura ARMv8-A
 
+    .data
+    // Matriz original 3x3
+matriz:     .quad   1, 2, 3
+           .quad   4, 5, 6
+           .quad   7, 8, 9
+    
+    // Matriz transpuesta 3x3
+transpuesta: .zero   72          // 9 elementos * 8 bytes = 72 bytes
+    
+    // Dimensiones de la matriz
+filas:      .quad   3
+columnas:   .quad   3
+    
+    // Mensajes para imprimir
+msg_original:   .string "\nMatriz Original:\n"
+msg_trans:      .string "\nMatriz Transpuesta:\n"
+msg_elemento:   .string "%3ld "  // Formato para long int en Linux
+msg_newline:    .string "\n"
+
+    .text
+    .global main
+    .type main, %function
+    .align 2
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+    
+    // Mostrar matriz original
+    adr     x0, msg_original
+    bl      printf
+    adr     x0, matriz
+    bl      imprimir_matriz
+    
+    // Transponer matriz
+    bl      transponer_matriz
+    
+    // Mostrar matriz transpuesta
+    adr     x0, msg_trans
+    bl      printf
+    adr     x0, transpuesta
+    bl      imprimir_matriz
+    
+    // Epílogo y retorno
+    ldp     x29, x30, [sp], 16
+    mov     w0, 0
+    ret
+
+// Función para transponer matriz
 transponer_matriz:
-    // Registros de entrada:
-    // x0 - puntero a la matriz de entrada
-    // x1 - puntero a la matriz de salida
-    // x2 - número de filas (m)
-    // x3 - número de columnas (n)
+    stp     x29, x30, [sp, -64]!
+    mov     x29, sp
+    // Inicializar contadores
+    mov     x19, #0              // i = 0
+    adr     x20, filas
+    ldr     x20, [x20]          // Cargar número de filas
+    adr     x21, columnas
+    ldr     x21, [x21]          // Cargar número de columnas
 
-    mov x4, #0          // Índice fila (i)
-1:
-    cmp x4, x2          // ¿i >= m?
-    bge fin             // Si i >= m, fin del bucle
+bucle_i:
+    cmp     x19, x20            // Comparar i con filas
+    b.ge    fin_transposicion
+    mov     x22, #0             // j = 0
 
-    mov x5, #0          // Índice columna (j)
-2:
-    cmp x5, x3          // ¿j >= n?
-    bge siguiente_fila  // Si j >= n, pasar a la siguiente fila
+bucle_j:
+    cmp     x22, x21            // Comparar j con columnas
+    b.ge    siguiente_i
+    
+    // Calcular índice matriz original [i][j]
+    mul     x23, x19, x21       // i * columnas
+    add     x23, x23, x22       // + j
+    lsl     x23, x23, #3        // * 8 (tamaño de quad)
+    
+    // Calcular índice matriz transpuesta [j][i]
+    mul     x24, x22, x20       // j * filas
+    add     x24, x24, x19       // + i
+    lsl     x24, x24, #3        // * 8
+    
+    // Cargar elemento de matriz original
+    adr     x25, matriz
+    ldr     x26, [x25, x23]
+    
+    // Guardar en matriz transpuesta
+    adr     x27, transpuesta
+    str     x26, [x27, x24]
+    
+    add     x22, x22, #1        // j++
+    b       bucle_j
 
-    // Calcular el índice en la matriz original
-    mul x6, x4, x3      // x6 = i * n
-    add x6, x6, x5      // x6 = i * n + j
-    ldr w7, [x0, x6, LSL #2] // Cargar elemento de entrada
+siguiente_i:
+    add     x19, x19, #1        // i++
+    b       bucle_i
 
-    // Calcular el índice transpuesto
-    mul x8, x5, x2      // x8 = j * m
-    add x8, x8, x4      // x8 = j * m + i
-    str w7, [x1, x8, LSL #2] // Guardar elemento en la matriz transpuesta
+fin_transposicion:
+    ldp     x29, x30, [sp], 64
+    ret
 
-    add x5, x5, #1      // j++
-    b 2b                // Repetir columna
+// Función para imprimir matriz
+imprimir_matriz:
+    stp     x29, x30, [sp, -48]!
+    mov     x29, sp
+    str     x0, [sp, 16]        // Guardar dirección de la matriz
+    mov     x19, #0             // i = 0
+    adr     x20, filas
+    ldr     x20, [x20]          // Cargar número de filas
+    adr     x21, columnas
+    ldr     x21, [x21]          // Cargar número de columnas
 
-siguiente_fila:
-    add x4, x4, #1      // i++
-    b 1b                // Repetir fila
+bucle_imprimir_ext:
+    cmp     x19, x20
+    b.ge    fin_imprimir
+    mov     x22, #0             // j = 0
 
-fin:
+bucle_imprimir_int:
+    cmp     x22, x21
+    b.ge    nueva_linea
+    // Calcular offset
+    mul     x23, x19, x21
+    add     x23, x23, x22
+    lsl     x23, x23, #3
+    // Imprimir elemento
+    adr     x0, msg_elemento
+    ldr     x24, [sp, 16]
+    ldr     x1, [x24, x23]
+    bl      printf
+    add     x22, x22, #1
+    b       bucle_imprimir_int
+
+nueva_linea:
+    adr     x0, msg_newline
+    bl      printf
+    add     x19, x19, #1
+    b       bucle_imprimir_ext
+
+fin_imprimir:
+    ldp     x29, x30, [sp], 48
     ret
