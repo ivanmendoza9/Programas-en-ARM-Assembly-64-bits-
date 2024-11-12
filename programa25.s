@@ -37,76 +37,94 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.global contar_vocales_consonantes
+    .data
+msg_ingreso:    .string "Ingrese una cadena: "
+msg_vocales:    .string "Número de vocales: %d\n"
+msg_consonantes: .string "Número de consonantes: %d\n"
+buffer:         .skip 100        // Buffer para almacenar la cadena
+formato_str:    .string "%[^\n]" // Leer hasta encontrar newline
+vocales:        .ascii "aeiouAEIOU"
 
-.section .text
-contar_vocales_consonantes:
-    // x0 = puntero a la cadena
-    // x1 = puntero al contador de vocales
-    // x2 = puntero al contador de consonantes
-    
-    // Guardar registros
-    stp x29, x30, [sp, #-16]!
-    stp x19, x20, [sp, #-16]!  // x19 = vocales, x20 = consonantes
-    
-    // Inicializar contadores
-    mov x19, #0     // vocales = 0
-    mov x20, #0     // consonantes = 0
-    mov x4, #0      // índice = 0
+    .text
+    .global main
+    .align 2
 
-loop:
-    // Cargar carácter actual
-    ldrb w3, [x0, x4]
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -32]!
+    mov     x29, sp
     
-    // Si es fin de cadena, terminar
-    cbz w3, done
-    
-    // Convertir a minúscula si es mayúscula
-    sub w5, w3, #'A'
-    cmp w5, #25
-    bhi not_upper
-    add w3, w3, #32
-    
-not_upper:
-    // Verificar si es letra minúscula
-    sub w5, w3, #'a'
-    cmp w5, #25
-    bhi next_char
-    
-    // Comprobar si es vocal
-    mov w6, #'a'
-    cmp w3, w6
-    beq is_vowel
-    mov w6, #'e'
-    cmp w3, w6
-    beq is_vowel
-    mov w6, #'i'
-    cmp w3, w6
-    beq is_vowel
-    mov w6, #'o'
-    cmp w3, w6
-    beq is_vowel
-    mov w6, #'u'
-    cmp w3, w6
-    beq is_vowel
-    
-    // Si no es vocal, es consonante
-    add x20, x20, #1
-    b next_char
-    
-is_vowel:
-    add x19, x19, #1
-    
-next_char:
-    add x4, x4, #1
-    b loop
-    
-done:
-    // Guardar resultados en las direcciones proporcionadas
-    str x19, [x1]    // guardar vocales
-    str x20, [x2]    // guardar consonantes
-    
-    // Restaurar registros
-    ldp x19, x20, [sp], #16
-    ldp x29, x30, [sp], #16
+    // Guardar contadores en el stack
+    str     xzr, [sp, 16]       // Contador vocales
+    str     xzr, [sp, 24]       // Contador consonantes
+
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer cadena
+    adr     x0, formato_str
+    adr     x1, buffer
+    bl      scanf
+
+    // Iniciar procesamiento de la cadena
+    adr     x0, buffer          // x0 = dirección de la cadena
+    mov     x1, #0              // x1 = índice en la cadena
+
+procesar_char:
+    ldrb    w2, [x0, x1]       // Cargar carácter
+    cbz     w2, fin_conteo      // Si es 0, fin de cadena
+
+    // Verificar si es letra
+    cmp     w2, #'A'
+    b.lt    siguiente_char
+    cmp     w2, #'z'
+    b.gt    siguiente_char
+    cmp     w2, #'Z'
+    b.le    es_letra
+    cmp     w2, #'a'
+    b.ge    es_letra
+    b       siguiente_char
+
+es_letra:
+    // Verificar si es vocal
+    adr     x3, vocales         // x3 = dirección de vocales
+    mov     x4, #0              // x4 = índice en vocales
+
+check_vocal:
+    ldrb    w5, [x3, x4]       // Cargar vocal
+    cbz     w5, es_consonante   // Si llegamos al final, es consonante
+    cmp     w2, w5             // Comparar con vocal actual
+    b.eq    es_vocal
+    add     x4, x4, #1
+    b       check_vocal
+
+es_vocal:
+    ldr     x4, [sp, 16]       // Cargar contador de vocales
+    add     x4, x4, #1         // Incrementar
+    str     x4, [sp, 16]       // Guardar nuevo valor
+    b       siguiente_char
+
+es_consonante:
+    ldr     x4, [sp, 24]       // Cargar contador de consonantes
+    add     x4, x4, #1         // Incrementar
+    str     x4, [sp, 24]       // Guardar nuevo valor
+
+siguiente_char:
+    add     x1, x1, #1         // Siguiente carácter
+    b       procesar_char
+
+fin_conteo:
+    // Mostrar resultados
+    adr     x0, msg_vocales
+    ldr     x1, [sp, 16]
+    bl      printf
+
+    adr     x0, msg_consonantes
+    ldr     x1, [sp, 24]
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 32
     ret
