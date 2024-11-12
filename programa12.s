@@ -12,6 +12,7 @@
  * Sistema objetivo: Raspberry Pi 5 con Raspbian OS 64-bit
  * Ensamblador: as (GNU assembler), ld (GNU linker)
  * Depurador: gdb con GEF
+ * LINK ASCIINEMA: https://asciinema.org/a/yLn7dEpdosAajPugw6SRQXLxc
  * ----------------------------------------------------------
  * Solución en C:
  * ----------------------------------------------------------
