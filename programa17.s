@@ -39,52 +39,166 @@
  * -----------------------------------------------------
  =========================================================*/
 
-.section .data
-.section .text
-.global ordenamiento_seleccion
+.data
+array:      .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // Espacio para 10 números
+arr_len:    .word 10                               // Longitud máxima del arreglo
+msg_input:  .asciz "Ingrese 10 números enteros:\n"
+msg_num:    .asciz "Número %d: "
+scan_fmt:   .asciz "%d"
+msg_before: .asciz "Arreglo antes de ordenar:\n"
+msg_after:  .asciz "Arreglo después de ordenar:\n"
+msg_elem:   .asciz "%d "
+msg_nl:     .asciz "\n"
 
-ordenamiento_seleccion:
-    mov x2, x1              // Guardar el tamaño del arreglo en x2 para el bucle externo
+.text
+.global main
+main:
+    // Guardar registros
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
 
-bucle_externo:
-    cmp x2, 1               // Si hay 1 o menos elementos, ya está ordenado
-    ble fin_bucle_externo   // Salir si el arreglo tiene 0 o 1 elementos
+    // Imprimir mensaje de entrada
+    adrp x0, msg_input
+    add x0, x0, :lo12:msg_input
+    bl printf
 
-    mov x3, 0               // Reiniciar el índice del bucle externo
-    mov x4, x3               // Suponer que el mínimo es el índice actual
+    // Inicializar para lectura de números
+    mov w22, #0                  // Contador para entrada
+input_loop:
+    // Verificar si hemos leído 10 números
+    cmp w22, #10
+    bge input_done
 
-bucle_interno:
-    add x5, x3, 1            // x5 es el índice del siguiente elemento
-    cmp x5, x2               // Comparar x5 con el tamaño del arreglo
-    bge intercambio           // Si es mayor o igual, realizar el intercambio
+    // Imprimir prompt para número actual
+    adrp x0, msg_num
+    add x0, x0, :lo12:msg_num
+    add w1, w22, #1
+    bl printf
 
-    ldr w6, [x0, x5, lsl #2]  // Cargar el siguiente elemento
-    ldr w7, [x0, x4, lsl #2]  // Cargar el elemento mínimo actual
-    cmp w6, w7                // Comparar el siguiente elemento con el mínimo
+    // Preparar para scanf
+    adrp x0, scan_fmt
+    add x0, x0, :lo12:scan_fmt
+    adrp x1, array
+    add x1, x1, :lo12:array
+    lsl w2, w22, #2              // Multiplicar índice por 4
+    add x1, x1, w2, UXTW        // Añadir offset al array
+    bl scanf
 
-    blt actualizar_minimo     // Si el siguiente elemento es menor, actualizar el mínimo
-    b siguiente_elemento
+    add w22, w22, #1            // Incrementar contador
+    b input_loop
 
-actualizar_minimo:
-    mov x4, x5                // Actualizar el índice mínimo
+input_done:
+    // Imprimir mensaje inicial
+    adrp x0, msg_before
+    add x0, x0, :lo12:msg_before
+    bl printf
 
-siguiente_elemento:
-    add x3, x3, 1             // Incrementar el índice del bucle interno
-    b bucle_interno           // Volver al inicio del bucle interno
+    // Imprimir arreglo original
+    bl print_array
 
-intercambio:
-    cmp x4, x3                // Comparar el índice mínimo con el índice actual
-    beq siguiente_bucle       // Si son iguales, no hacer nada
+    // Preparar para ordenamiento por selección
+    adrp x0, arr_len
+    add x0, x0, :lo12:arr_len
+    ldr w0, [x0]        // w0 = longitud del arreglo
+    sub w1, w0, #1      // w1 = n-1 para el bucle externo
 
-    // Intercambiar elementos
-    ldr w6, [x0, x3, lsl #2]  // Cargar el elemento en el índice actual
-    ldr w7, [x0, x4, lsl #2]  // Cargar el elemento mínimo
-    str w7, [x0, x3, lsl #2]  // Guardar el mínimo en la posición actual
-    str w6, [x0, x4, lsl #2]  // Guardar el actual en la posición del mínimo
+outer_loop:
+    cmp w1, #0          // Verificar si hemos terminado
+    blt done_sort       // Si w1 < 0, terminamos
+    
+    mov w2, w1          // w2 = índice del máximo actual
+    mov w3, w1          // w3 = contador para bucle interno
+    
+inner_loop:
+    cmp w3, #0          // Verificar si llegamos al inicio
+    blt end_inner       // Si w3 < 0, terminar bucle interno
+    
+    // Cargar elementos a comparar
+    adrp x4, array
+    add x4, x4, :lo12:array
+    
+    lsl w5, w3, #2      // w5 = índice * 4
+    add x5, x4, w5, UXTW    // x5 = dirección del elemento actual
+    lsl w6, w2, #2      // w6 = índice_max * 4
+    add x6, x4, w6, UXTW    // x6 = dirección del máximo actual
+    
+    ldr w7, [x5]        // w7 = elemento actual
+    ldr w8, [x6]        // w8 = elemento máximo actual
+    
+    // Comparar elementos
+    cmp w7, w8
+    ble no_update       // Si actual <= máximo, no actualizar
+    mov w2, w3          // Actualizar índice del máximo
+no_update:
+    sub w3, w3, #1      // Decrementar contador interno
+    b inner_loop
 
-siguiente_bucle:
-    sub x2, x2, 1             // Decrementar el tamaño del bucle externo
-    b bucle_externo            // Volver al inicio del bucle externo
+end_inner:
+    // Intercambiar elementos si es necesario
+    cmp w2, w1          // Verificar si el máximo está en su posición
+    beq no_swap         // Si está en posición, no intercambiar
+    
+    // Realizar intercambio
+    adrp x4, array
+    add x4, x4, :lo12:array
+    lsl w5, w1, #2      // Calcular offset para posición actual
+    add x5, x4, w5, UXTW
+    lsl w6, w2, #2      // Calcular offset para posición del máximo
+    add x6, x4, w6, UXTW
+    
+    ldr w7, [x5]        // Cargar elemento en posición actual
+    ldr w8, [x6]        // Cargar elemento máximo
+    str w8, [x5]        // Guardar máximo en posición actual
+    str w7, [x6]        // Guardar elemento actual en posición del máximo
 
-fin_bucle_externo:
-    ret                        // Terminar la función
+no_swap:
+    sub w1, w1, #1      // Decrementar contador externo
+    b outer_loop
+
+done_sort:
+    // Imprimir mensaje final
+    adrp x0, msg_after
+    add x0, x0, :lo12:msg_after
+    bl printf
+
+    // Imprimir arreglo ordenado
+    bl print_array
+
+    // Restaurar y retornar
+    ldp x29, x30, [sp], 16
+    ret
+
+// Subrutina para imprimir el arreglo
+print_array:
+    stp x29, x30, [sp, -16]!    // Guardar registros
+    
+    adrp x19, array             // Cargar dirección del arreglo
+    add x19, x19, :lo12:array
+    
+    adrp x20, arr_len
+    add x20, x20, :lo12:arr_len
+    ldr w20, [x20]              // Cargar longitud
+    
+    mov w21, #0                 // Inicializar contador
+
+print_loop:
+    cmp w21, w20                // Comparar contador con longitud
+    bge print_end               // Si terminamos, salir
+    
+    // Imprimir elemento actual
+    adrp x0, msg_elem
+    add x0, x0, :lo12:msg_elem
+    ldr w1, [x19, w21, UXTW #2] // Cargar elemento actual
+    bl printf
+    
+    add w21, w21, #1            // Incrementar contador
+    b print_loop
+
+print_end:
+    // Imprimir nueva línea
+    adrp x0, msg_nl
+    add x0, x0, :lo12:msg_nl
+    bl printf
+    
+    ldp x29, x30, [sp], 16      // Restaurar registros
+    ret
