@@ -32,19 +32,73 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-/* Sección de código */
-.section .text
-.global contar_bits
+    .data
+msg_ingreso:    .string "Ingrese un número: "
+msg_resultado:  .string "Número de bits activados: %d\n"
+msg_binario:    .string "Representación binaria: "
+msg_bit:        .string "%d"
+msg_newline:    .string "\n"
+formato_int:    .string "%d"
 
-contar_bits:
-    mov x1, 0          // Contador de bits activados
-    mov x2, x0         // Copia el número a x2
+numero:         .word 0
 
-.loop:
-    and x3, x2, #1     // Verifica el bit menos significativo
-    add x1, x1, x3     // Incrementa el contador si el bit es 1
-    lsr x2, x2, #1     // Desplaza a la derecha
-    cbnz x2, .loop     // Si x2 no es cero, continúa
+    .text
+    .global main
+    .align 2
 
-    mov x0, x1         // El resultado se almacena en x0
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Solicitar número
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer número
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
+
+    // Cargar número
+    adr     x0, numero
+    ldr     w1, [x0]
+    mov     w19, w1          // Guardar copia para mostrar binario
+
+    // Contador de bits
+    mov     w2, #0          // Inicializar contador
+
+contar_loop:
+    cbz     w1, fin_conteo  // Si el número es 0, terminar
+    and     w3, w1, #1      // Obtener bit menos significativo
+    add     w2, w2, w3      // Sumar al contador si es 1
+    lsr     w1, w1, #1      // Desplazar a la derecha
+    b       contar_loop
+
+fin_conteo:
+    // Mostrar resultado
+    mov     w1, w2
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Mostrar representación binaria
+    adr     x0, msg_binario
+    bl      printf
+
+    mov     w20, #32
+mostrar_bits:
+    sub     w20, w20, #1
+    lsr     w21, w19, w20
+    and     w1, w21, #1
+    adr     x0, msg_bit
+    bl      printf
+
+    cmp     w20, #0
+    b.ne    mostrar_bits
+
+    adr     x0, msg_newline
+    bl      printf
+
+    // Retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
     ret
