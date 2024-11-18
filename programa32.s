@@ -34,40 +34,82 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-/* Sección de código */
-.section .text
-.global potencia
+ .data
+msg_base:       .string "Ingrese la base (x): "
+msg_exp:        .string "Ingrese el exponente (n): "
+msg_resultado:  .string "El resultado de %d^%d es: %d\n"
+msg_error:      .string "Error: exponente negativo no soportado\n"
+formato_int:    .string "%d"
 
-// Calcula la potencia x^n (x en x0, n en x1, resultado en x0)
-potencia:
-    // Guardar registros
-    stp x29, x30, [sp, -16]!
-    mov x29, sp
+base:           .word 0
+exponente:      .word 0
 
-    // Verificar si el exponente (n) es 0
-    cmp x1, 0
-    b.eq potencia_base_cero // Si n es 0, devolver 1
+    .text
+    .global main
+    .align 2
 
-    // Inicializar el resultado en x2 con x (base)
-    mov x2, x0
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Solicitar base
+    adr     x0, msg_base
+    bl      printf
+
+    adr     x0, formato_int
+    adr     x1, base
+    bl      scanf
+
+    // Solicitar exponente
+    adr     x0, msg_exp
+    bl      printf
+
+    adr     x0, formato_int
+    adr     x1, exponente
+    bl      scanf
+
+    // Cargar valores
+    adr     x0, base
+    ldr     w19, [x0]        // Base en w19
+    adr     x0, exponente
+    ldr     w20, [x0]        // Exponente en w20
+
+    // Verificar si exponente es negativo
+    cmp     w20, #0
+    b.lt    error_exp
+
+    // Caso especial: exponente = 0
+    cmp     w20, #0
+    b.eq    exp_cero
+
+    // Calcular potencia
+    mov     w21, w19         // Resultado inicial = base
+    mov     w22, #1          // Contador
 
 potencia_loop:
-    // Decrementar el exponente (n)
-    sub x1, x1, 1
-    cmp x1, 0
-    b.eq potencia_done      // Si n llega a 0, salir del bucle
+    cmp     w22, w20
+    b.eq    mostrar_resultado
+    mul     w21, w21, w19
+    add     w22, w22, #1
+    b       potencia_loop
 
-    // Multiplicar el resultado actual por x (base)
-    mul x2, x2, x0
-    b potencia_loop         // Repetir el bucle
+exp_cero:
+    mov     w21, #1
+    b       mostrar_resultado
 
-potencia_base_cero:
-    mov x2, 1               // Si n es 0, x^0 = 1
+error_exp:
+    adr     x0, msg_error
+    bl      printf
+    b       fin_programa
 
-potencia_done:
-    // Mover el resultado a x0
-    mov x0, x2
+mostrar_resultado:
+    adr     x0, msg_resultado
+    mov     w1, w19          // Base
+    mov     w2, w20          // Exponente
+    mov     w3, w21          // Resultado
+    bl      printf
 
-    // Restaurar registros y retornar
-    ldp x29, x30, [sp], 16
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
     ret
