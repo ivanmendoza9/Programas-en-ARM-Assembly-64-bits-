@@ -45,110 +45,85 @@
  =========================================================*/
 
 .data
-    .align 3
-    error_flag: .word 0        // Flag para indicar error en la entrada
+msg_input: .string "Ingrese un número binario: "
+msg_output: .string "El número en decimal es: %d\n"
+msg_error: .string "Error: Ingrese solo 0s y 1s\n"
+formato_str: .string "%s"  
+buffer: .space 33        // 32 bits + null terminator
+numero: .word 0
 
 .text
+.global main
 .align 2
-.global binary_to_decimal
-.global get_error
-.global clear_error
 
-// Función para convertir binario a decimal
-// Entrada: x0 = dirección del string binario
-// Salida: x0 = número decimal resultante
-binary_to_decimal:
-    stp     x29, x30, [sp, -48]!
-    mov     x29, sp
-    stp     x19, x20, [sp, 16]     // Guardar registros que usaremos
-    stp     x21, x22, [sp, 32]
-
+main:
+    // Prólogo
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+    
+    // Solicitar número binario
+    adr x0, msg_input
+    bl printf
+    
+    // Leer string binario
+    adr x0, formato_str
+    adr x1, buffer
+    bl scanf
+    
     // Inicializar registros
-    mov     x19, x0                 // Guardar dirección del string
-    mov     x20, #0                 // Resultado decimal
-    mov     x21, #0                 // Índice actual
-    mov     x22, #1                 // Valor de potencia de 2
+    mov w19, #0          // Resultado decimal
+    mov w20, #1          // Potencia de 2 actual
+    adr x21, buffer      // Puntero al string
+    
+    // Obtener longitud del string
+    mov x22, x21        // Copiar dirección inicial
+longitud_loop:
+    ldrb w23, [x22]     // Cargar byte actual
+    cbz w23, comenzar_conversion  // Si es null, terminar
+    add x22, x22, #1    // Siguiente carácter
+    b longitud_loop
 
-    // Limpiar flag de error
-    bl      clear_error
+comenzar_conversion:
+    sub x22, x22, #1    // Retroceder al último dígito
 
-validate_loop:
-    // Cargar carácter actual
-    ldrb    w0, [x19, x21]
-    
-    // Si es null (fin del string), terminar validación
-    cbz     w0, start_conversion
-    
-    // Verificar si es '0' o '1'
-    cmp     w0, #'0'
-    b.lt    invalid_input
-    cmp     w0, #'1'
-    b.gt    invalid_input
-    
-    // Siguiente carácter
-    add     x21, x21, #1
-    b       validate_loop
-
-invalid_input:
-    // Marcar error y retornar
-    bl      set_error
-    mov     x0, #-1
-    b       end_conversion
-
-start_conversion:
-    // x21 ahora tiene la longitud del string
-    mov     x22, #1                 // Reiniciar potencia de 2
-    mov     x20, #0                 // Reiniciar resultado
-    
-convert_loop:
-    // Si ya procesamos todos los dígitos, terminar
-    cbz     x21, end_conversion
-    
-    // Decrementar índice para procesar desde el último dígito
-    sub     x21, x21, #1
+conversion_loop:
+    cmp x22, x21        // ¿Llegamos al inicio?
+    b.lt fin_conversion
     
     // Cargar dígito actual
-    ldrb    w0, [x19, x21]
+    ldrb w23, [x22]
     
-    // Si es '1', sumar la potencia actual
-    cmp     w0, #'1'
-    b.ne    next_digit
+    // Verificar si es válido (0 o 1)
+    cmp w23, #'0'
+    b.lt error_input
+    cmp w23, #'1'
+    b.gt error_input
     
-    // Sumar potencia actual al resultado
-    add     x20, x20, x22
+    // Convertir ASCII a valor numérico
+    sub w23, w23, #'0'
     
-next_digit:
-    // Multiplicar potencia por 2
-    lsl     x22, x22, #1
-    b       convert_loop
-
-end_conversion:
-    mov     x0, x20                 // Mover resultado a x0
+    // Si es 1, sumar la potencia actual
+    cbz w23, siguiente_digito
+    add w19, w19, w20
     
-    // Restaurar registros
-    ldp     x19, x20, [sp, 16]
-    ldp     x21, x22, [sp, 32]
-    ldp     x29, x30, [sp], 48
-    ret
+siguiente_digito:
+    lsl w20, w20, #1    // Multiplicar potencia por 2
+    sub x22, x22, #1    // Retroceder un dígito
+    b conversion_loop
 
-// Función para establecer error
-set_error:
-    adrp    x0, error_flag
-    add     x0, x0, :lo12:error_flag
-    mov     w1, #1
-    str     w1, [x0]
-    ret
+error_input:
+    adr x0, msg_error
+    bl printf
+    b fin_programa
 
-// Función para limpiar error
-clear_error:
-    adrp    x0, error_flag
-    add     x0, x0, :lo12:error_flag
-    str     wzr, [x0]
-    ret
-
-// Función para obtener estado de error
-get_error:
-    adrp    x0, error_flag
-    add     x0, x0, :lo12:error_flag
-    ldr     w0, [x0]
+fin_conversion:
+    // Mostrar resultado
+    adr x0, msg_output
+    mov w1, w19
+    bl printf
+    
+fin_programa:
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 16
     ret
