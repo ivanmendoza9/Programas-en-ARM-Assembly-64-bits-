@@ -39,61 +39,145 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.section .text
-.global invertir_arreglo
-.global _start
+.data
+    // Mensajes del menú
+    msg_menu: 
+        .string "\nOperaciones con Arreglos\n"
+        .string "1. Sumar elementos del arreglo\n"
+        .string "2. Invertir arreglo\n"
+        .string "3. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_resultado: .string "Resultado de la suma: %d\n"
+    msg_array: .string "Arreglo: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Arreglo de ejemplo y variables
+    array: .word 1, 2, 3, 4, 5  // Arreglo de 5 elementos
+    array_size: .word 5
+    opcion: .word 0
+    suma: .word 0
 
-// Función principal (main)
-_start:
-    // Arreglo de ejemplo
-    adr x0, arreglo       // Dirección del arreglo
-    mov x1, 5             // Tamaño del arreglo (5 elementos)
+.text
+.global main
+.align 2
 
-    // Llamada a invertir_arreglo
-    bl invertir_arreglo
-
-    // Aquí el arreglo está invertido
-    // Para fines de prueba, podemos dejar el arreglo en x0
-    // y terminar el programa
-
-    // Salir del programa
-    mov x8, #93           // syscall número 93 (exit)
-    mov x0, #0            // código de salida 0
-    svc #0                // Hacer la llamada al sistema para salir
-
-// Arreglo de ejemplo
-arreglo:
-    .quad 10, 20, 30, 40, 50
-
-// Función que invierte un arreglo
-// Entrada: x0 = puntero al arreglo, x1 = tamaño del arreglo
-invertir_arreglo:
-    // Guardar registros
+main:
     stp x29, x30, [sp, -16]!
     mov x29, sp
 
-    // Calcular los límites iniciales
-    mov x2, x0           // x2 = puntero al inicio del arreglo
-    add x3, x0, x1, lsl #3  // x3 = puntero al final del arreglo (x1 * 8 bytes para enteros de 64 bits)
-    sub x3, x3, 8        // Ajustar x3 para que apunte al último elemento
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
 
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #3
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq sumar_array
+    
+    cmp w0, #2
+    b.eq invertir_array
+    
+    b menu_loop
+
+sumar_array:
+    // Inicializar suma en 0
+    mov w19, #0
+    
+    // Cargar dirección base del array y tamaño
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    mov w22, #0  // índice
+    
+suma_loop:
+    // Sumar elemento actual
+    ldr w23, [x20, w22, SXTW #2]
+    add w19, w19, w23
+    
+    // Incrementar índice
+    add w22, w22, #1
+    
+    // Verificar si terminamos
+    cmp w22, w21
+    b.lt suma_loop
+    
+    // Mostrar resultado
+    adr x0, msg_resultado
+    mov w1, w19
+    bl printf
+    
+    b menu_loop
+
+invertir_array:
+    // Cargar dirección base y tamaño
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    
+    // Inicializar índices
+    mov w22, #0  // inicio
+    sub w23, w21, #1  // fin
+    
 invertir_loop:
-    // Comparar los punteros para ver si se cruzaron
-    cmp x2, x3
-    b.ge invertir_done   // Si se cruzaron, terminar
+    // Verificar si terminamos
+    cmp w22, w23
+    b.ge mostrar_array
+    
+    // Intercambiar elementos
+    ldr w24, [x20, w22, SXTW #2]  // temp1
+    ldr w25, [x20, w23, SXTW #2]  // temp2
+    
+    str w25, [x20, w22, SXTW #2]
+    str w24, [x20, w23, SXTW #2]
+    
+    // Actualizar índices
+    add w22, w22, #1
+    sub w23, w23, #1
+    
+    b invertir_loop
 
-    // Intercambiar los elementos apuntados por x2 y x3
-    ldr x4, [x2]         // Cargar el valor en x2 en x4
-    ldr x5, [x3]         // Cargar el valor en x3 en x5
-    str x5, [x2]         // Almacenar x5 en la posición de x2
-    str x4, [x3]         // Almacenar x4 en la posición de x3
+mostrar_array:
+    // Mostrar mensaje
+    adr x0, msg_array
+    bl printf
+    
+    // Inicializar índice
+    mov w22, #0
+    
+mostrar_loop:
+    // Mostrar elemento actual
+    ldr w1, [x20, w22, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    // Incrementar índice
+    add w22, w22, #1
+    
+    // Verificar si terminamos
+    cmp w22, w21
+    b.lt mostrar_loop
+    
+    // Nueva línea
+    adr x0, msg_newline
+    bl printf
+    
+    b menu_loop
 
-    // Mover los punteros hacia el centro
-    add x2, x2, 8        // Avanzar x2 al siguiente elemento
-    sub x3, x3, 8        // Retroceder x3 al elemento anterior
-    b invertir_loop      // Repetir el bucle
-
-invertir_done:
-    // Restaurar registros y retornar
+fin_programa:
+    mov w0, #0
     ldp x29, x30, [sp], 16
     ret
