@@ -35,38 +35,145 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-/* Sección de código */
-.section .text
-.global suma_arreglo
+.data
+    // Mensajes del menú
+    msg_menu: 
+        .string "\nOperaciones con Arreglos\n"
+        .string "1. Sumar elementos del arreglo\n"
+        .string "2. Invertir arreglo\n"
+        .string "3. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_resultado: .string "Resultado de la suma: %d\n"
+    msg_array: .string "Arreglo: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Arreglo de ejemplo y variables
+    array: .word 1, 2, 3, 4, 5  // Arreglo de 5 elementos
+    array_size: .word 5
+    opcion: .word 0
+    suma: .word 0
 
-// Función que calcula la suma de un arreglo
-// Entrada: x0 = puntero al arreglo, x1 = tamaño del arreglo
-// Salida: x0 = suma de los elementos
-suma_arreglo:
-    // Guardar registros
+.text
+.global main
+.align 2
+
+main:
     stp x29, x30, [sp, -16]!
     mov x29, sp
 
-    // Inicializar la suma en x2 a 0
-    mov x2, 0
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
 
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #3
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq sumar_array
+    
+    cmp w0, #2
+    b.eq invertir_array
+    
+    b menu_loop
+
+sumar_array:
+    // Inicializar suma en 0
+    mov w19, #0
+    
+    // Cargar dirección base del array y tamaño
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    mov w22, #0  // índice
+    
 suma_loop:
-    // Comprobar si el tamaño (x1) es 0
-    cmp x1, 0
-    beq suma_done
+    // Sumar elemento actual
+    ldr w23, [x20, w22, SXTW #2]
+    add w19, w19, w23
+    
+    // Incrementar índice
+    add w22, w22, #1
+    
+    // Verificar si terminamos
+    cmp w22, w21
+    b.lt suma_loop
+    
+    // Mostrar resultado
+    adr x0, msg_resultado
+    mov w1, w19
+    bl printf
+    
+    b menu_loop
 
-    // Cargar el valor actual del arreglo en x3
-    ldr x3, [x0], 8      // Cargar valor de x0 y avanzar el puntero en 8 bytes (para enteros de 64 bits)
-    add x2, x2, x3       // Sumar el valor en x2
+invertir_array:
+    // Cargar dirección base y tamaño
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    
+    // Inicializar índices
+    mov w22, #0  // inicio
+    sub w23, w21, #1  // fin
+    
+invertir_loop:
+    // Verificar si terminamos
+    cmp w22, w23
+    b.ge mostrar_array
+    
+    // Intercambiar elementos
+    ldr w24, [x20, w22, SXTW #2]  // temp1
+    ldr w25, [x20, w23, SXTW #2]  // temp2
+    
+    str w25, [x20, w22, SXTW #2]
+    str w24, [x20, w23, SXTW #2]
+    
+    // Actualizar índices
+    add w22, w22, #1
+    sub w23, w23, #1
+    
+    b invertir_loop
 
-    // Decrementar el tamaño del arreglo
-    sub x1, x1, 1
-    b suma_loop          // Repetir el bucle
+mostrar_array:
+    // Mostrar mensaje
+    adr x0, msg_array
+    bl printf
+    
+    // Inicializar índice
+    mov w22, #0
+    
+mostrar_loop:
+    // Mostrar elemento actual
+    ldr w1, [x20, w22, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    // Incrementar índice
+    add w22, w22, #1
+    
+    // Verificar si terminamos
+    cmp w22, w21
+    b.lt mostrar_loop
+    
+    // Nueva línea
+    adr x0, msg_newline
+    bl printf
+    
+    b menu_loop
 
-suma_done:
-    // Mover el resultado a x0
-    mov x0, x2
-
-    // Restaurar registros y retornar
+fin_programa:
+    mov w0, #0
     ldp x29, x30, [sp], 16
     ret
