@@ -53,94 +53,186 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.section .text
-.global rotar_arreglo
-.global _start
+.data
+    // Mensajes del menú
+    msg_menu: 
+        .string "\nRotación de Arreglos\n"
+        .string "1. Rotar a la izquierda\n"
+        .string "2. Rotar a la derecha\n"
+        .string "3. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_pos: .string "Ingrese posiciones a rotar: "
+    msg_array: .string "Arreglo: "
+    msg_resultado: .string "Resultado: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Arreglo y variables
+    array: .word 1, 2, 3, 4, 5  // Arreglo de ejemplo
+    temp_array: .skip 20        // Arreglo temporal (5 elementos * 4 bytes)
+    array_size: .word 5
+    opcion: .word 0
+    posiciones: .word 0
 
-// Función principal (main)
-_start:
-    // Arreglo de ejemplo
-    adr x0, arreglo       // Dirección del arreglo
-    mov x1, 5             // Tamaño del arreglo (5 elementos)
-    mov x2, 2             // Número de posiciones a rotar
-    mov x3, 0             // Dirección (0 = izquierda)
+.text
+.global main
+.align 2
 
-    // Llamada a rotar_arreglo
-    bl rotar_arreglo
-
-    // Aquí el arreglo está rotado
-    // Para fines de prueba, podemos dejar el arreglo en x0
-    // y terminar el programa
-
-    // Salir del programa
-    mov x8, #93           // syscall número 93 (exit)
-    mov x0, #0            // código de salida 0
-    svc #0                // Hacer la llamada al sistema para salir
-
-// Arreglo de ejemplo
-arreglo:
-    .quad 1, 2, 3, 4, 5
-
-// Función que rota un arreglo
-// Entrada: x0 = puntero al arreglo, x1 = tamaño del arreglo
-//          x2 = número de posiciones, x3 = dirección (0 = izquierda, 1 = derecha)
-rotar_arreglo:
-    // Guardar registros
+main:
     stp x29, x30, [sp, -16]!
     mov x29, sp
 
-    // Ajustar el número de posiciones para que esté dentro del tamaño del arreglo
-    udiv x2, x2, x1      // x2 %= x1 (número de rotaciones efectivas)
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
 
-    // Si el tamaño es 0 o la rotación es nula, regresar
-    cbz x1, rotacion_done
-    cbz x2, rotacion_done
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
 
-    // Seleccionar dirección de rotación
-    cmp x3, 0
-    beq rotacion_izquierda
-    b rotacion_derecha
+    // Verificar salida
+    adr x0, opcion
+    ldr w0, [x0]
+    cmp w0, #3
+    b.eq fin_programa
 
-rotacion_izquierda:
-    // Guardar el primer elemento temporalmente y hacer un shift a la izquierda
-    ldr x4, [x0]         // Guardar el primer elemento en x4
-    add x5, x0, 8        // Puntero al siguiente elemento
+    // Leer posiciones a rotar
+    adr x0, msg_pos
+    bl printf
+    adr x0, formato_int
+    adr x1, posiciones
+    bl scanf
 
-rotacion_izq_loop:
-    // Desplazar elementos
-    cmp x1, 1
-    b.le rotacion_izq_store  // Si sólo queda un elemento, almacenar x4
-    ldr x6, [x5]         // Cargar el siguiente elemento
-    str x6, [x0], 8      // Desplazar a la izquierda
-    mov x5, x0           // Mover puntero
-    sub x1, x1, 1
-    b rotacion_izq_loop
+    // Mostrar arreglo original
+    adr x0, msg_array
+    bl printf
+    bl mostrar_array
 
-rotacion_izq_store:
-    str x4, [x0]
-    b rotacion_done
+    // Seleccionar operación
+    adr x0, opcion
+    ldr w0, [x0]
+    cmp w0, #1
+    b.eq rotar_izquierda
+    cmp w0, #2
+    b.eq rotar_derecha
+    b menu_loop
 
-rotacion_derecha:
-    // Guardar el último elemento temporalmente y hacer un shift a la derecha
-    add x5, x0, x1, lsl #3 // Puntero al último elemento
-    sub x5, x5, 8        // Ajustar para último índice
-    ldr x4, [x5]         // Guardar último elemento en x4
+rotar_izquierda:
+    // Cargar valores necesarios
+    adr x20, array
+    adr x21, temp_array
+    adr x22, array_size
+    ldr w22, [x22]         // Tamaño del arreglo
+    adr x23, posiciones
+    ldr w23, [x23]        // Posiciones a rotar
+    
+    // Normalizar posiciones
+    sdiv w24, w23, w22    // División
+    mul w24, w24, w22     // Multiplicación
+    sub w23, w23, w24     // Módulo
+    
+    // Copiar elementos al arreglo temporal
+    mov w24, #0           // Índice
+copiar_izq_loop:
+    ldr w25, [x20, w24, SXTW #2]
+    str w25, [x21, w24, SXTW #2]
+    add w24, w24, #1
+    cmp w24, w22
+    b.lt copiar_izq_loop
+    
+    // Realizar rotación
+    mov w24, #0           // Índice destino
+rotar_izq_loop:
+    add w25, w24, w23     // Índice origen = (i + k) % n
+    sdiv w26, w25, w22    // División
+    mul w26, w26, w22     // Multiplicación
+    sub w25, w25, w26     // Módulo
+    
+    ldr w27, [x21, w25, SXTW #2]
+    str w27, [x20, w24, SXTW #2]
+    
+    add w24, w24, #1
+    cmp w24, w22
+    b.lt rotar_izq_loop
+    
+    b mostrar_resultado
 
-rotacion_der_loop:
-    // Desplazar elementos
-    cmp x1, 1
-    b.le rotacion_der_store  // Si sólo queda un elemento, almacenar x4
-    ldr x6, [x5, -8]     // Cargar el elemento anterior
-    str x6, [x5]         // Desplazar a la derecha
-    mov x5, x5           // Ajustar puntero
-    sub x1, x1, 1
-    b rotacion_der_loop
+rotar_derecha:
+    // Cargar valores necesarios
+    adr x20, array
+    adr x21, temp_array
+    adr x22, array_size
+    ldr w22, [x22]
+    adr x23, posiciones
+    ldr w23, [x23]
+    
+    // Normalizar posiciones
+    sdiv w24, w23, w22
+    mul w24, w24, w22
+    sub w23, w23, w24
+    
+    // Copiar elementos al arreglo temporal
+    mov w24, #0
+copiar_der_loop:
+    ldr w25, [x20, w24, SXTW #2]
+    str w25, [x21, w24, SXTW #2]
+    add w24, w24, #1
+    cmp w24, w22
+    b.lt copiar_der_loop
+    
+    // Realizar rotación
+    mov w24, #0
+rotar_der_loop:
+    sub w25, w22, w23     // n - k
+    add w25, w25, w24     // (n - k + i)
+    sdiv w26, w25, w22    // División
+    mul w26, w26, w22     // Multiplicación
+    sub w25, w25, w26     // Módulo
+    
+    ldr w27, [x21, w25, SXTW #2]
+    str w27, [x20, w24, SXTW #2]
+    
+    add w24, w24, #1
+    cmp w24, w22
+    b.lt rotar_der_loop
+    
+    b mostrar_resultado
 
-rotacion_der_store:
-    str x4, [x5]
-    b rotacion_done
+mostrar_array:
+    // Mostrar elementos del arreglo
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    mov w22, #0
 
-rotacion_done:
-    // Restaurar registros y retornar
+mostrar_loop:
+    ldr w1, [x20, w22, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    add w22, w22, #1
+    cmp w22, w21
+    b.lt mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    ret
+
+mostrar_resultado:
+    // Mostrar mensaje de resultado
+    adr x0, msg_resultado
+    bl printf
+    
+    // Mostrar arreglo rotado
+    bl mostrar_array
+    
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
     ldp x29, x30, [sp], 16
     ret
