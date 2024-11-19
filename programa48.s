@@ -6,7 +6,7 @@
  *               Realiza un conjunto de operaciones de suma, desplazamiento, multiplicación
  *               y división durante un número determinado de iteraciones.
  * Compilación:  as -o FuncionDePrueba.o FuncionDePrueba.s
- *               ld -o FuncionDePrueba FuncionDePrueba.o
+ *               gcc -o FuncionDePrueba FuncionDePrueba.o
  * Ejecución:    ./FuncionDePrueba
  =========================================================*/
 
