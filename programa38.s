@@ -53,138 +53,204 @@
  =========================================================*/
 
 .data
-    .align 3                    // Alineamiento a 8 bytes
-    queue_array: .skip 800      // Espacio para 100 elementos de 8 bytes
-    front: .word 0             // Índice del frente de la cola
-    rear: .word 0              // Índice del final de la cola
-    count: .word 0             // Contador de elementos
-    .equ MAX_SIZE, 100         // Tamaño máximo de la cola
+    msg_menu: 
+        .string "\nOperaciones de Cola\n"
+        .string "1. Enqueue (Insertar)\n"
+        .string "2. Dequeue (Eliminar)\n"
+        .string "3. Peek (Ver frente)\n"
+        .string "4. Mostrar cola\n"
+        .string "5. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_enq: .string "Ingrese valor a insertar: "
+    msg_deq: .string "Elemento eliminado: %d\n"
+    msg_peek: .string "Elemento al frente: %d\n"
+    msg_empty: .string "La cola está vacía\n"
+    msg_full: .string "La cola está llena\n"
+    msg_queue: .string "Contenido de la cola: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Cola y variables
+    queue: .skip 40       // Espacio para 10 elementos (4 bytes c/u)
+    queue_size: .word 10  // Tamaño máximo de la cola
+    front: .word -1       // Índice del frente
+    rear: .word -1        // Índice del final
+    opcion: .word 0
+    valor: .word 0
 
 .text
+.global main
 .align 2
-.global init_cola
-.global enqueue
-.global dequeue
-.global is_empty
-.global is_full
 
-// Inicializar cola
-init_cola:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
-    
-    // Reiniciar todos los índices a 0
-    adrp    x0, front
-    add     x0, x0, :lo12:front
-    str     wzr, [x0]
-    
-    adrp    x0, rear
-    add     x0, x0, :lo12:rear
-    str     wzr, [x0]
-    
-    adrp    x0, count
-    add     x0, x0, :lo12:count
-    str     wzr, [x0]
-    
-    ldp     x29, x30, [sp], 16
-    ret
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
 
-// Encolar (enqueue) - x0 contiene el valor a encolar
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #5
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq enqueue
+    
+    cmp w0, #2
+    b.eq dequeue
+    
+    cmp w0, #3
+    b.eq peek_elemento
+    
+    cmp w0, #4
+    b.eq mostrar_cola
+    
+    b menu_loop
+
 enqueue:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
-    
     // Verificar si la cola está llena
-    bl      is_full
-    cbnz    w0, enqueue_full
+    adr x20, rear
+    ldr w21, [x20]
+    adr x22, queue_size
+    ldr w22, [x22]
+    sub w22, w22, #1
     
-    // Obtener índice rear actual
-    adrp    x1, rear
-    add     x1, x1, :lo12:rear
-    ldr     w2, [x1]
+    cmp w21, w22
+    b.ge cola_llena
     
-    // Guardar valor en la cola
-    adrp    x3, queue_array
-    add     x3, x3, :lo12:queue_array
-    lsl     x4, x2, #3             // Multiplicar índice por 8
-    str     x0, [x3, x4]           // Guardar valor
+    // Leer valor a insertar
+    adr x0, msg_enq
+    bl printf
+    adr x0, formato_int
+    adr x1, valor
+    bl scanf
     
-    // Actualizar rear
-    add     w2, w2, #1
-    cmp     w2, MAX_SIZE
-    csel    w2, wzr, w2, eq        // Si rear == MAX_SIZE, volver a 0
-    str     w2, [x1]
+    // Si es el primer elemento
+    adr x20, front
+    ldr w23, [x20]
+    cmp w23, #-1
+    b.ne continuar_enq
+    mov w23, #0
+    str w23, [x20]
     
-    // Incrementar count
-    adrp    x1, count
-    add     x1, x1, :lo12:count
-    ldr     w2, [x1]
-    add     w2, w2, #1
-    str     w2, [x1]
+continuar_enq:
+    // Incrementar rear y guardar valor
+    adr x20, rear
+    ldr w21, [x20]
+    add w21, w21, #1
+    str w21, [x20]
     
-    mov     x0, #0                 // Éxito
-    ldp     x29, x30, [sp], 16
-    ret
+    adr x20, queue
+    adr x22, valor
+    ldr w22, [x22]
+    str w22, [x20, w21, SXTW #2]
+    
+    b menu_loop
 
-enqueue_full:
-    mov     x0, #-1                // Error: cola llena
-    ldp     x29, x30, [sp], 16
-    ret
-
-// Desencolar (dequeue)
 dequeue:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
-    
     // Verificar si la cola está vacía
-    bl      is_empty
-    cbnz    w0, dequeue_empty
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
     
-    // Obtener valor del frente
-    adrp    x1, front
-    add     x1, x1, :lo12:front
-    ldr     w2, [x1]
+    // Obtener elemento del frente
+    adr x20, queue
+    ldr w22, [x20, w21, SXTW #2]
     
-    adrp    x3, queue_array
-    add     x3, x3, :lo12:queue_array
-    lsl     x4, x2, #3
-    ldr     x0, [x3, x4]           // Cargar valor a retornar
+    // Mostrar elemento eliminado
+    adr x0, msg_deq
+    mov w1, w22
+    bl printf
     
-    // Actualizar front
-    add     w2, w2, #1
-    cmp     w2, MAX_SIZE
-    csel    w2, wzr, w2, eq        // Si front == MAX_SIZE, volver a 0
-    str     w2, [x1]
+    // Actualizar índices
+    adr x20, front
+    adr x23, rear
+    ldr w24, [x23]
     
-    // Decrementar count
-    adrp    x1, count
-    add     x1, x1, :lo12:count
-    ldr     w2, [x1]
-    sub     w2, w2, #1
-    str     w2, [x1]
+    cmp w21, w24
+    b.eq vaciar_cola
     
-    ldp     x29, x30, [sp], 16
-    ret
+    add w21, w21, #1
+    str w21, [x20]
+    b menu_loop
 
-dequeue_empty:
-    mov     x0, #-1                // Error: cola vacía
-    ldp     x29, x30, [sp], 16
-    ret
+vaciar_cola:
+    mov w21, #-1
+    adr x20, front
+    str w21, [x20]
+    adr x20, rear
+    str w21, [x20]
+    b menu_loop
 
-// Verificar si está vacía
-is_empty:
-    adrp    x1, count
-    add     x1, x1, :lo12:count
-    ldr     w0, [x1]
-    cmp     w0, #0
-    cset    w0, eq                 // 1 si está vacía, 0 si no
-    ret
+peek_elemento:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Mostrar elemento del frente
+    adr x20, queue
+    ldr w22, [x20, w21, SXTW #2]
+    adr x0, msg_peek
+    mov w1, w22
+    bl printf
+    
+    b menu_loop
 
-// Verificar si está llena
-is_full:
-    adrp    x1, count
-    add     x1, x1, :lo12:count
-    ldr     w0, [x1]
-    cmp     w0, MAX_SIZE
-    cset    w0, eq                 // 1 si está llena, 0 si no
+mostrar_cola:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Mostrar mensaje
+    adr x0, msg_queue
+    bl printf
+    
+    // Mostrar elementos
+    adr x20, queue
+    adr x23, rear
+    ldr w23, [x23]
+
+mostrar_loop:
+    ldr w1, [x20, w21, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    add w21, w21, #1
+    cmp w21, w23
+    b.le mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    b menu_loop
+
+cola_vacia:
+    adr x0, msg_empty
+    bl printf
+    b menu_loop
+
+cola_llena:
+    adr x0, msg_full
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
     ret
