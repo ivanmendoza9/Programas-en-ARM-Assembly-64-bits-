@@ -9,59 +9,91 @@
  * Ejecución:    ./hexa
  =========================================================*/
 
-/*=========================================================
- * Código equivalente en C:
- * ---------------------------------------------------------
- * int hex_char_to_dec(char hex_char) {
- *     if (hex_char >= '0' && hex_char <= '9') {
- *         return hex_char - '0';  // Para '0' a '9'
- *     }
- *     if (hex_char >= 'A' && hex_char <= 'F') {
- *         return hex_char - 'A' + 10;  // Para 'A' a 'F'
- *     }
- *     if (hex_char >= 'a' && hex_char <= 'f') {
- *         return hex_char - 'a' + 10;  // Para 'a' a 'f'
- *     }
- *     return -1;  // Si no es un carácter hexadecimal válido
- * }
- * ---------------------------------------------------------
- =========================================================*/
+/*
+#include <stdio.h>   // Biblioteca estándar para entrada/salida
 
-.global hex_char_to_dec
+// Definición de cadenas (equivalente a la sección .data en ensamblador)
+const char *prompt = "Ingrese un numero hexadecimal (con 0x): ";
+const char *result_msg = "El numero en decimal es: %ld\n";
+const char *format_input = "%lx";    // Formato para leer hexadecimal como long
+const char *error_msg = "Error: Ingrese un numero hexadecimal valido\n";
+char buffer[20];                    // Buffer para almacenar la entrada
 
-// Convierte un carácter hexadecimal a decimal
-// Entrada: w0 (carácter hexadecimal, como 'A' o 'F')
-// Salida: w0 (valor decimal)
-hex_char_to_dec:
-    cmp w0, '0'
-    blt invalid_hex               // Si es menor que '0', no es hexadecimal
-    cmp w0, '9'
-    ble convert_digit             // Si está entre '0' y '9', es dígito decimal
+int main() {
+    // Variable para almacenar el número ingresado
+    unsigned long number;
 
-    cmp w0, 'A'
-    blt invalid_hex               // Si es menor que 'A', no es hexadecimal
-    cmp w0, 'F'
-    ble convert_upper_letter      // Si está entre 'A' y 'F', es letra mayúscula
+    // Imprimir el mensaje para pedir un número hexadecimal
+    printf("%s", prompt);
 
-    cmp w0, 'a'
-    blt invalid_hex               // Si es menor que 'a', no es hexadecimal
-    cmp w0, 'f'
-    ble convert_lower_letter      // Si está entre 'a' y 'f', es letra minúscula
+    // Leer el número hexadecimal ingresado por el usuario
+    // scanf devuelve el número de variables asignadas correctamente
+    if (scanf(format_input, &number) != 1) {
+        // Si la entrada es inválida, mostrar mensaje de error
+        printf("%s", error_msg);
+        return 1;  // Salir con código de error
+    }
 
-invalid_hex:
-    mov w0, -1                    // Retornar -1 si no es válido
-    ret
+    // Imprimir el número convertido en decimal
+    printf(result_msg, number);
 
-convert_digit:
-    sub w0, w0, '0'               // Convertir '0'-'9' a 0-9
-    ret
+    // Salir con éxito
+    return 0;
+}
+*/
 
-convert_upper_letter:
-    sub w0, w0, 'A'               // Convertir 'A'-'F' a 10-15
-    add w0, w0, 10
-    ret
 
-convert_lower_letter:
-    sub w0, w0, 'a'               // Convertir 'a'-'f' a 10-15
-    add w0, w0, 10
+.data
+    prompt:         .string "Ingrese un numero hexadecimal (con 0x): "
+    result_msg:     .string "El numero en decimal es: %ld\n"
+    format_input:   .string "%lx"          // Formato para leer hexadecimal long
+    error_msg:      .string "Error: Ingrese un numero hexadecimal valido\n"
+    buffer:         .skip 20              // Buffer para almacenar la entrada
+    newline:        .string "\n"
+
+.text
+.global main
+
+// Función principal
+main:
+    // Prólogo
+    stp     x29, x30, [sp, #-16]!   // Guardar frame pointer y link register
+    mov     x29, sp                  // Actualizar frame pointer
+
+    // Reservar espacio para variable local
+    sub     sp, sp, #16             // 16 bytes para almacenar el número
+    
+    // Imprimir prompt
+    adr     x0, prompt
+    bl      printf
+
+    // Leer número hexadecimal
+    adr     x0, format_input        // Formato para scanf
+    mov     x1, sp                  // Dirección donde guardar el número
+    bl      scanf
+    
+    // Verificar si la lectura fue exitosa
+    cmp     x0, #1
+    b.ne    error_input
+
+    // Cargar el número convertido
+    ldr     x1, [sp]
+    
+    // Imprimir resultado en decimal
+    adr     x0, result_msg
+    bl      printf
+    
+    mov     w0, #0                  // Retornar 0
+    b       end
+
+error_input:
+    // Manejar error de entrada
+    adr     x0, error_msg
+    bl      printf
+    mov     w0, #1                  // Retornar 1 para indicar error
+
+end:
+    // Epílogo
+    add     sp, sp, #16             // Liberar espacio local
+    ldp     x29, x30, [sp], #16     // Restaurar frame pointer y link register
     ret
