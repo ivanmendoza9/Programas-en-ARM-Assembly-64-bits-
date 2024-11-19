@@ -1,7 +1,7 @@
 /*=========================================================
  * Programa:     EsArmstrong.s
  * Autor:        IVAN MENDOZA
- * Fecha:        11 de noviembre de 2024
+ * Fecha:        19 de noviembre de 2024
  * Descripción:  Determina si un número es un número Armstrong
  *               (la suma de los dígitos elevados a la potencia del número
  *               de dígitos es igual al número original).
@@ -9,103 +9,220 @@
  * Ejecución:    ./EsArmstrong <numero>
  =========================================================*/
 
-/* Código en C:
-* #include <stdio.h>
-* #include <math.h>
-* 
-* // Función para determinar si un número es Armstrong
-* int EsArmstrong(int num) {
-*     int original = num;
-*     int suma = 0;
-*     int digitos = 0;
-* 
-*     // Contar el número de dígitos
-*     while (num > 0) {
-*         num /= 10;
-*         digitos++;
-*     }
-* 
-*     num = original;
-* 
-*     // Calcular la suma de las potencias
-*     while (num > 0) {
-*         int digito = num % 10;
-*         suma += pow(digito, digitos);
-*         num /= 10;
-*     }
-* 
-*     // Verificar si la suma es igual al número original
-*     return suma == original;
-* }
-* 
-* int main() {
-*     int num;
-* 
-*     // Leer el número
-*     printf("Ingrese un número: ");
-*     scanf("%d", &num);
-* 
-*     // Verificar si es un número Armstrong
-*     if (EsArmstrong(num)) {
-*         printf("%d es un número Armstrong.\n", num);
-*     } else {
-*         printf("%d no es un número Armstrong.\n", num);
-*     }
-* 
-*     return 0;
-* }
+/*
+#include <stdio.h>
+#include <math.h> // Biblioteca para calcular potencias
+
+// Mensajes para interacción con el usuario
+const char *prompt = "Ingrese un numero para verificar si es Armstrong: ";
+const char *is_armstrong = "El numero %ld ES un numero Armstrong!\n";
+const char *not_armstrong = "El numero %ld NO es un numero Armstrong.\n";
+const char *explain_fmt = "Explicacion: %ld = ";
+const char *plus_fmt = " + ";
+const char *power_fmt = "%ld^%ld";
+const char *newline = "\n";
+const char *input_fmt = "%ld"; // Formato para leer enteros largos
+const char *error_msg = "Error: Ingrese un numero valido\n";
+
+int main() {
+    long num;     // Almacena el número ingresado por el usuario
+    long temp;    // Copia temporal del número para cálculos
+    long digits;  // Contador de dígitos
+    long sum;     // Suma de las potencias de los dígitos
+
+    // Solicitar al usuario el número a verificar
+    printf("%s", prompt);
+    if (scanf(input_fmt, &num) != 1) {
+        // Mostrar error si la entrada es inválida
+        printf("%s", error_msg);
+        return 1;
+    }
+
+    // Contar el número de dígitos
+    temp = num;
+    digits = 0;
+    while (temp > 0) {
+        temp /= 10; // Dividir entre 10 para reducir el número
+        digits++;
+    }
+
+    // Calcular la suma de las potencias de los dígitos
+    temp = num; // Restaurar número original
+    sum = 0;
+    while (temp > 0) {
+        long digit = temp % 10;           // Obtener el último dígito
+        long power = 1;
+        for (long i = 0; i < digits; i++) // Calcular `digit^digits`
+            power *= digit;
+        sum += power; // Sumar al total
+        temp /= 10;   // Remover el último dígito
+    }
+
+    // Verificar si el número es Armstrong
+    if (sum == num) {
+        printf(is_armstrong, num);
+
+        // Explicación de la operación
+        printf(explain_fmt, num);
+        temp = num;
+        while (temp > 0) {
+            long digit = temp % 10;
+            printf(power_fmt, digit, digits); // Imprimir dígito^potencia
+            temp /= 10;
+            if (temp > 0)
+                printf("%s", plus_fmt); // Imprimir "+" entre términos
+        }
+        printf("%s", newline);
+    } else {
+        printf(not_armstrong, num);
+    }
+
+    return 0; // Finalizar programa exitosamente
+}
 */
 
-.global EsArmstrong
 
-EsArmstrong:
-    // Guardar registros
-    stp x29, x30, [sp, #-16]!
-    stp x19, x20, [sp, #-16]!
+.data
+    prompt:         .string "Ingrese un numero para verificar si es Armstrong: "
+    is_armstrong:   .string "El numero %ld ES un numero Armstrong!\n"
+    not_armstrong:  .string "El numero %ld NO es un numero Armstrong.\n"
+    explain_fmt:    .string "Explicacion: %ld = "
+    plus_fmt:      .string " + "
+    power_fmt:     .string "%ld^%ld"
+    newline:       .string "\n"
+    input_fmt:     .string "%ld"
+    error_msg:     .string "Error: Ingrese un numero valido\n"
+
+.text
+.global main
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, #-16]!
+    mov     x29, sp
     
-    mov x19, x0                  // Guardar número original
-    mov x1, x0                   // Copiar número para contar dígitos
-    mov x3, 0                    // Inicializar contador de dígitos
+    // Reservar espacio para variables
+    sub     sp, sp, #32
+    
+    // Mostrar prompt
+    adr     x0, prompt
+    bl      printf
+    
+    // Leer número
+    adr     x0, input_fmt
+    mov     x1, sp
+    bl      scanf
+    
+    // Verificar lectura exitosa
+    cmp     x0, #1
+    b.ne    input_error
+    
+    // Cargar número en x19
+    ldr     x19, [sp]
+    
+    // Contar dígitos (resultado en x20)
+    mov     x20, #0          // Contador de dígitos
+    mov     x21, x19         // Copia del número para contar
+    mov     x24, #10         // Constante 10 para divisiones
 
-contar_digitos:
-    cbz x1, preparar_calculo     // Si x1 es 0, terminar conteo
-    udiv x1, x1, #10             // Dividir por 10
-    add x3, x3, #1               // Incrementar contador
-    b contar_digitos
+count_digits:
+    cbz     x21, count_done
+    udiv    x21, x21, x24    // Dividir por 10 usando registro
+    add     x20, x20, #1
+    b       count_digits
+count_done:
 
-preparar_calculo:
-    mov x1, x19                  // Restaurar número original
-    mov x2, #0                   // Inicializar suma de potencias
+    // Calcular suma de potencias
+    mov     x21, x19         // Copia del número para procesar
+    mov     x22, #0          // Suma total
+    mov     x23, x19         // Copia para mostrar explicación después
 
-procesar_digitos:
-    cbz x1, verificar            // Si no hay más dígitos, verificar resultado
+calc_powers:
+    cbz     x21, calc_done
     
     // Obtener último dígito
-    mov x4, x1                   // Copiar número actual
-    udiv x4, x4, #10             // Dividir por 10
-    msub x4, x4, #10, x1         // x4 = x1 - (x4 * 10) -> último dígito
-    udiv x1, x1, #10             // Actualizar número removiendo último dígito
+    udiv    x25, x21, x24    // x25 = número / 10
+    msub    x26, x25, x24, x21  // x26 = último dígito
     
-    // Calcular potencia
-    mov x5, x4                   // Base = dígito
-    mov x6, #1                   // Resultado inicial = 1
-    mov x7, x3                   // Contador = número de dígitos
-
-calcular_potencia:
-    cbz x7, sumar_potencia       // Si contador es 0, sumar resultado
-    mul x6, x6, x5               // Multiplicar por base
-    sub x7, x7, #1               // Decrementar contador
-    b calcular_potencia
-
-sumar_potencia:
-    add x2, x2, x6               // Sumar potencia al total
-    b procesar_digitos
-
-verificar:
-    cmp x2, x19                  // Comparar suma con número original
-    cset w0, eq                  // Establecer resultado (1 si igual, 0 si no)
+    // Calcular potencia (dígito^n)
+    mov     x27, #1          // Resultado de la potencia
+    mov     x28, x20         // Contador para potencia
+power_loop:
+    cbz     x28, power_done
+    mul     x27, x27, x26
+    sub     x28, x28, #1
+    b       power_loop
+power_done:
     
-    // Restaurar registros
-    ldp x19, x20, [sp], #16
-    ldp x29, x30, [sp], #16
+    // Sumar al total
+    add     x22, x22, x27
+    
+    // Siguiente dígito
+    mov     x21, x25
+    b       calc_powers
+    
+calc_done:
+    // Verificar si es Armstrong
+    cmp     x22, x19
+    b.ne    print_not_armstrong
+    
+    // Es Armstrong - Imprimir resultado y explicación
+    adr     x0, is_armstrong
+    mov     x1, x19
+    bl      printf
+    
+    // Imprimir explicación
+    adr     x0, explain_fmt
+    mov     x1, x19
+    bl      printf
+    
+    // Mostrar cada dígito elevado a la potencia
+    mov     x21, x23         // Restaurar número original
+explain_loop:
+    cbz     x21, explain_done
+    
+    // Obtener dígito
+    udiv    x25, x21, x24
+    msub    x26, x25, x24, x21  // x26 = dígito actual
+    
+    // Imprimir término
+    adr     x0, power_fmt
+    mov     x1, x26          // Dígito
+    mov     x2, x20          // Potencia
+    bl      printf
+    
+    // Si no es el último dígito, imprimir "+"
+    cmp     x25, #0
+    b.eq    explain_next
+    adr     x0, plus_fmt
+    bl      printf
+    
+explain_next:
+    mov     x21, x25
+    b       explain_loop
+    
+explain_done:
+    adr     x0, newline
+    bl      printf
+    b       end_program
+
+print_not_armstrong:
+    adr     x0, not_armstrong
+    mov     x1, x19
+    bl      printf
+    b       end_program
+
+input_error:
+    adr     x0, error_msg
+    bl      printf
+    mov     w0, #1
+    b       cleanup
+
+end_program:
+    mov     w0, #0
+
+cleanup:
+    // Epílogo
+    add     sp, sp, #32
+    ldp     x29, x30, [sp], #16
     ret
