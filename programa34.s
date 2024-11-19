@@ -11,173 +11,154 @@
  * Ejecución:    ./invertir
  =========================================================*/
 
-/*=========================================================
- * Código equivalente en C:
- * ---------------------------------------------------------
- * #include <stdio.h>
- * 
- * // Función para invertir los elementos de un arreglo
- * void invertir_arreglo(long *arr, int tam) {
- *     long temp;
- *     for (int i = 0; i < tam / 2; i++) {
- *         temp = arr[i];
- *         arr[i] = arr[tam - i - 1];
- *         arr[tam - i - 1] = temp;
- *     }
- * }
- * 
- * int main() {
- *     long arreglo[] = {10, 20, 30, 40, 50};  // Ejemplo de arreglo
- *     int tam = 5;                            // Tamaño del arreglo
- *     invertir_arreglo(arreglo, tam);
- *     for (int i = 0; i < tam; i++) {
- *         printf("%ld ", arreglo[i]);
- *     }
- *     printf("\n");
- *     return 0;
- * }
- * ---------------------------------------------------------
- =========================================================*/
+ //#include <stdio.h> // Biblioteca estándar para funciones de entrada y salida
 
-.data
-    // Mensajes del menú
-    msg_menu: 
-        .string "\nOperaciones con Arreglos\n"
-        .string "1. Sumar elementos del arreglo\n"
-        .string "2. Invertir arreglo\n"
-        .string "3. Salir\n"
-        .string "Seleccione una opción: "
-    
-    msg_resultado: .string "Resultado de la suma: %d\n"
-    msg_array: .string "Arreglo: "
-    msg_num: .string "%d "
-    msg_newline: .string "\n"
-    formato_int: .string "%d"
-    
-    // Arreglo de ejemplo y variables
-    array: .word 1, 2, 3, 4, 5  // Arreglo de 5 elementos
-    array_size: .word 5
-    opcion: .word 0
-    suma: .word 0
+      //int main() { // Función principal
+
+        // Declaración del arreglo y su tamaño
+         //  int arreglo[] = {1, 2, 3, 4, 5, 6, 7, 8}; // Arreglo con 8 elementos enteros
+        //int tamano_arreglo = 8; // Tamaño del arreglo
+
+        // Imprimir mensaje inicial antes de invertir el arreglo
+        //printf("\nArreglo original:\n");
+
+        // Bucle para recorrer e imprimir cada elemento del arreglo original
+        //for (int i = 0; i < tamano_arreglo; i++) {
+        // Imprimir el índice y el valor del elemento en esa posición
+        //  printf("Elemento[%d] = %d\n", i, arreglo[i]);
+        //}
+
+        // Inicialización de índices para el proceso de inversión
+        //int inicio = 0; // Índice de inicio (primer elemento del arreglo)
+        //int fin = tamano_arreglo - 1; // Índice de fin (último elemento del arreglo)
+
+        // Bucle para invertir el arreglo
+        //while (inicio < fin) {
+        // Intercambio de elementos en las posiciones inicio y fin
+        //  int temp = arreglo[inicio]; // Guardar temporalmente el valor en la posición inicio
+        //arreglo[inicio] = arreglo[fin]; // Mover el valor de la posición fin a la posición inicio
+        //arreglo[fin] = temp; // Colocar el valor guardado en temp en la posición fin
+
+        // Actualizar los índices para acercarse al centro del arreglo
+        //inicio++; // Avanzar el índice de inicio
+        //fin--; // Retroceder el índice de fin
+        //}
+
+      // Imprimir mensaje después de invertir el arreglo
+      //printf("\nArreglo invertido:\n");
+
+      // Bucle para recorrer e imprimir cada elemento del arreglo invertido
+      //for (int i = 0; i < tamano_arreglo; i++) {
+        // Imprimir el índice y el valor del elemento en esa posición
+      //  printf("Elemento[%d] = %d\n", i, arreglo[i]);
+      //}
+
+    //return 0; // Finalización exitosa del programa
+    //}
+
+.section .rodata
+format_antes: .asciz "\nArreglo original:\n"
+format_despues: .asciz "\nArreglo invertido:\n"
+format_elemento: .asciz "Elemento[%d] = %d\n"
+
+.section .data
+array: .word 1, 2, 3, 4, 5, 6, 7, 8    // Arreglo de 8 elementos
+array_size: .word 8                     // Tamaño del arreglo
 
 .text
 .global main
-.align 2
+.type main, %function
 
 main:
-    stp x29, x30, [sp, -16]!
-    mov x29, sp
+    // Prólogo de la función
+    stp     x29, x30, [sp, -16]!   // Guardar frame pointer y link register
+    mov     x29, sp                 // Establecer frame pointer
 
-menu_loop:
-    // Mostrar menú
-    adr x0, msg_menu
-    bl printf
+    // Guardar registros callee-saved
+    stp     x19, x20, [sp, -16]!   // x19 = inicio, x20 = fin
+    stp     x21, x22, [sp, -16]!   // x21 = dirección base, x22 = tamaño
 
-    // Leer opción
-    adr x0, formato_int
-    adr x1, opcion
-    bl scanf
+    // Cargar dirección del arreglo y su tamaño
+    adrp    x21, array
+    add     x21, x21, :lo12:array   // x21 = dirección base del arreglo
+    adrp    x22, array_size
+    add     x22, x22, :lo12:array_size
+    ldr     w22, [x22]             // w22 = tamaño del arreglo
 
-    // Verificar opción
-    adr x0, opcion
-    ldr w0, [x0]
-    
-    cmp w0, #3
-    b.eq fin_programa
-    
-    cmp w0, #1
-    b.eq sumar_array
-    
-    cmp w0, #2
-    b.eq invertir_array
-    
-    b menu_loop
+    // Imprimir mensaje "Arreglo original"
+    adrp    x0, format_antes
+    add     x0, x0, :lo12:format_antes
+    bl      printf
 
-sumar_array:
-    // Inicializar suma en 0
-    mov w19, #0
-    
-    // Cargar dirección base del array y tamaño
-    adr x20, array
-    adr x21, array_size
-    ldr w21, [x21]
-    mov w22, #0  // índice
-    
-suma_loop:
-    // Sumar elemento actual
-    ldr w23, [x20, w22, SXTW #2]
-    add w19, w19, w23
-    
-    // Incrementar índice
-    add w22, w22, #1
-    
-    // Verificar si terminamos
-    cmp w22, w21
-    b.lt suma_loop
-    
-    // Mostrar resultado
-    adr x0, msg_resultado
-    mov w1, w19
-    bl printf
-    
-    b menu_loop
+    // Mostrar arreglo original
+    mov     x20, #0                // contador = 0
+print_original:
+    cmp     x20, x22
+    b.ge    start_inversion
 
-invertir_array:
-    // Cargar dirección base y tamaño
-    adr x20, array
-    adr x21, array_size
-    ldr w21, [x21]
-    
-    // Inicializar índices
-    mov w22, #0  // inicio
-    sub w23, w21, #1  // fin
-    
-invertir_loop:
-    // Verificar si terminamos
-    cmp w22, w23
-    b.ge mostrar_array
-    
+    // Imprimir elemento actual
+    adrp    x0, format_elemento
+    add     x0, x0, :lo12:format_elemento
+    mov     x1, x20                // índice
+    ldr     w2, [x21, x20, lsl #2] // valor
+    bl      printf
+
+    add     x20, x20, #1          // contador++
+    b       print_original
+
+start_inversion:
+    // Inicializar índices para inversión
+    mov     x19, #0               // inicio = 0
+    sub     x20, x22, #1          // fin = tamaño - 1
+
+loop_inversion:
+    // Verificar si hemos terminado
+    cmp     x19, x20
+    b.ge    print_invertido
+
+    // Cargar elementos a intercambiar
+    ldr     w23, [x21, x19, lsl #2]  // temp1 = array[inicio]
+    ldr     w24, [x21, x20, lsl #2]  // temp2 = array[fin]
+
     // Intercambiar elementos
-    ldr w24, [x20, w22, SXTW #2]  // temp1
-    ldr w25, [x20, w23, SXTW #2]  // temp2
-    
-    str w25, [x20, w22, SXTW #2]
-    str w24, [x20, w23, SXTW #2]
-    
+    str     w24, [x21, x19, lsl #2]  // array[inicio] = temp2
+    str     w23, [x21, x20, lsl #2]  // array[fin] = temp1
+
     // Actualizar índices
-    add w22, w22, #1
-    sub w23, w23, #1
-    
-    b invertir_loop
+    add     x19, x19, #1          // inicio++
+    sub     x20, x20, #1          // fin--
+    b       loop_inversion
 
-mostrar_array:
-    // Mostrar mensaje
-    adr x0, msg_array
-    bl printf
-    
-    // Inicializar índice
-    mov w22, #0
-    
-mostrar_loop:
-    // Mostrar elemento actual
-    ldr w1, [x20, w22, SXTW #2]
-    adr x0, msg_num
-    bl printf
-    
-    // Incrementar índice
-    add w22, w22, #1
-    
-    // Verificar si terminamos
-    cmp w22, w21
-    b.lt mostrar_loop
-    
-    // Nueva línea
-    adr x0, msg_newline
-    bl printf
-    
-    b menu_loop
+print_invertido:
+    // Imprimir mensaje "Arreglo invertido"
+    adrp    x0, format_despues
+    add     x0, x0, :lo12:format_despues
+    bl      printf
 
-fin_programa:
-    mov w0, #0
-    ldp x29, x30, [sp], 16
+    // Mostrar arreglo invertido
+    mov     x20, #0               // contador = 0
+print_final:
+  cmp     x20, x22
+    b.ge    end
+
+    // Imprimir elemento actual
+    adrp    x0, format_elemento
+    add     x0, x0, :lo12:format_elemento
+    mov     x1, x20               // índice
+    ldr     w2, [x21, x20, lsl #2] // valor
+    bl      printf
+
+    add     x20, x20, #1         // contador++
+    b       print_final
+
+end:
+    // Restaurar registros
+    ldp     x21, x22, [sp], 16
+    ldp     x19, x20, [sp], 16
+
+    // Epílogo de la función
+    mov     w0, #0               // Valor de retorno
+    ldp     x29, x30, [sp], 16
     ret
+
+.size main, .-main
