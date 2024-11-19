@@ -1,7 +1,7 @@
 /*=========================================================
  * Programa:     LongestCommonPrefix.s
  * Autor:        IVAN MENDOZA
- * Fecha:        11 de noviembre de 2024
+ * Fecha:        19 de noviembre de 2024
  * Descripción:  Función que encuentra el prefijo común más largo
  *               entre dos cadenas de caracteres.
  * Compilación:  gcc -o LongestCommonPrefix LongestCommonPrefix.c
