@@ -11,7 +11,8 @@
  * Ejecución:    ./invertir
  =========================================================*/
 
- //#include <stdio.h> // Biblioteca estándar para funciones de entrada y salida
+ /*
+ #include <stdio.h> // Biblioteca estándar para funciones de entrada y salida
 
       //int main() { // Función principal
 
@@ -55,6 +56,7 @@
 
     //return 0; // Finalización exitosa del programa
     //}
+*/
 
 .section .rodata
 format_antes: .asciz "\nArreglo original:\n"
