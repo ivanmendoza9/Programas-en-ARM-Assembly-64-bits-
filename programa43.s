@@ -1,7 +1,7 @@
 /*=========================================================
  * Programa:     operaciones.s
  * Autor:        IVAN MENDOZA
- * Fecha:        11 de noviembre de 2024
+ * Fecha:        19 de noviembre de 2024
  * Descripción:  Implementa funciones para realizar operaciones 
  *               básicas: suma, resta, multiplicación y división.
  *               La función de división maneja el caso cuando 
