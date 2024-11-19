@@ -11,166 +11,170 @@
  * Ejecución:    ./grande
  =========================================================*/
 
-/*=========================================================
- * Código equivalente en C:
- * ---------------------------------------------------------
- * #include <stdio.h>
- * 
- * int segundo_mas_grande(int *arr, int tam) {
- *     int max1 = -1, max2 = -1;
- *     for (int i = 0; i < tam; i++) {
- *         if (arr[i] > max1) {
- *             max2 = max1;
- *             max1 = arr[i];
- *         } else if (arr[i] > max2) {
- *             max2 = arr[i];
- *         }
- *     }
- *     return (max2 == -1) ? -1 : max2;
- * }
- * 
- * int main() {
- *     int arreglo[] = {3, 1, 4, 1, 5, 9, 2, 6};
- *     int tam = 8;
- *     int segundo = segundo_mas_grande(arreglo, tam);
- *     printf("El segundo elemento más grande es: %d\n", segundo);
- *     return 0;
- * }
- * ---------------------------------------------------------
- =========================================================*/
+// #include <stdio.h> // Biblioteca estándar para funciones de entrada y salida
+
+// int main() { // Función principal
+
+//     // Mensajes del programa
+//     char *msg_titulo = " Buscador del Segundo Número Mayor\n"; // Mensaje de título
+//     char *msg_array = " Arreglo actual: ";                    // Mensaje de arreglo
+//     char *msg_result = " El segundo número más grande es: %d\n"; // Mensaje de resultado
+//     char *msg_error = " Error: El arreglo debe tener al menos 2 elementos\n"; // Mensaje de error
+//     char *format_int = "%d "; // Formato para imprimir enteros
+//     char *newline = "\n";     // Nueva línea
+
+//     // Arreglo de ejemplo y su tamaño
+//     int array[] = {15, 8, 23, 42, 4, 16, 55, 37, 11, 22}; // Ejemplo de arreglo con 10 números
+//     int array_size = 10; // Tamaño del arreglo
+
+//     // Imprimir título
+//     printf("%s", msg_titulo); // Mostrar título
+
+//     // Verificar que el arreglo tenga al menos 2 elementos
+//     if (array_size < 2) { // Si el tamaño es menor a 2, mostrar error
+//         printf("%s", msg_error); // Imprimir mensaje de error
+//         return 1; // Terminar programa con error
+//     }
+
+//     // Mostrar arreglo actual
+//     printf("%s", msg_array); // Imprimir mensaje de arreglo
+
+//     // Bucle para imprimir cada elemento del arreglo
+//     for (int i = 0; i < array_size; i++) { // Recorrer todos los elementos
+//         printf(format_int, array[i]); // Imprimir cada elemento
+//     }
+//     printf("%s", newline); // Imprimir nueva línea después del arreglo
+
+//     // Inicializar variables para encontrar los dos máximos
+//     int max1 = array[0]; // Primer número máximo
+//     int max2 = array[0]; // Segundo número máximo
+//     for (int i = 1; i < array_size; i++) { // Recorrer el arreglo desde el segundo elemento
+
+//         // Si el elemento actual es mayor que max1
+//         if (array[i] > max1) {
+//             max2 = max1; // El antiguo máximo pasa a ser segundo máximo
+//             max1 = array[i]; // Actualizar el máximo actual
+//         } else if (array[i] > max2 && array[i] != max1) {
+//             // Si el elemento es mayor que max2 y no es igual a max1, actualizar max2
+//             max2 = array[i];
+//         }
+//     }
+
+//     // Imprimir el segundo máximo
+//     printf(msg_result, max2); // Mostrar el segundo número más grande
+
+//     return 0; // Finalización exitosa del programa
+// }
+
 
 .data
-    msg_menu: 
-        .string "\nBúsqueda del Segundo Elemento más Grande\n"
-        .string "1. Encontrar segundo mayor\n"
-        .string "2. Mostrar arreglo\n"
-        .string "3. Salir\n"
-        .string "Seleccione una opción: "
+    // Mensajes del programa
+    msg_titulo:  .asciz " Buscador del Segundo Número Mayor\n"
+    msg_array:   .asciz " Arreglo actual: "
+    msg_result:  .asciz " El segundo número más grande es: %d\n"
+    msg_error:   .asciz " Error: El arreglo debe tener al menos 2 elementos\n"
+    format_int:  .asciz "%d "    // Formato para imprimir enteros
+    newline:     .asciz "\n"
     
-    msg_array: .string "Arreglo actual: "
-    msg_max: .string "El elemento más grande es: %d\n"
-    msg_second: .string "El segundo elemento más grande es: %d\n"
-    msg_error: .string "No existe un segundo elemento más grande (todos son iguales)\n"
-    msg_num: .string "%d "
-    msg_newline: .string "\n"
-    formato_int: .string "%d"
+    // Arreglo de ejemplo y su tamaño
+    .align 4
+    array:      .word  15, 8, 23, 42, 4, 16, 55, 37, 11, 22  // Ejemplo: 10 números
+    array_size: .word  10
     
-    // Arreglo y variables
-    array: .word 12, 35, 1, 10, 34, 1, 35, 8, 23, 19  // Arreglo de ejemplo con 10 elementos
-    array_size: .word 10
-    opcion: .word 0
-    max_num: .word 0
-    second_max: .word 0
-
 .text
 .global main
-.align 2
+.extern printf
 
 main:
+    // Prólogo
     stp x29, x30, [sp, -16]!
     mov x29, sp
-
-menu_loop:
-    // Mostrar menú
-    adr x0, msg_menu
+    
+    // Imprimir título
+    adrp x0, msg_titulo
+    add x0, x0, :lo12:msg_titulo
     bl printf
-
-    // Leer opción
-    adr x0, formato_int
-    adr x1, opcion
-    bl scanf
-
-    // Verificar opción
-    adr x0, opcion
-    ldr w0, [x0]
     
-    cmp w0, #3
-    b.eq fin_programa
+    // Cargar dirección y tamaño del array
+    adrp x19, array
+    add x19, x19, :lo12:array    // x19 = dirección base del array
+    adrp x20, array_size
+    add x20, x20, :lo12:array_size
+    ldr w20, [x20]               // w20 = tamaño del array
     
-    cmp w0, #1
-    b.eq encontrar_segundo
+    // Verificar que el array tenga al menos 2 elementos
+    cmp w20, #2
+    blt error
     
-    cmp w0, #2
-    b.eq mostrar_arreglo
+    // Mostrar arreglo actual
+    adrp x0, msg_array
+    add x0, x0, :lo12:msg_array
+    bl printf
     
-    b menu_loop
-
-encontrar_segundo:
-    // Inicializar variables
-    adr x20, array        // Dirección base del arreglo
-    adr x21, array_size
-    ldr w21, [x21]        // Tamaño del arreglo
+    // Imprimir elementos del array
+    mov w21, #0                  // w21 = contador
+print_loop:
+    cmp w21, w20
+    beq end_print
     
-    // Encontrar el máximo primero
-    ldr w22, [x20]        // max_num = array[0]
-    mov w23, w22          // second_max = array[0]
-    mov w24, #1           // índice = 1
-
-encontrar_max_loop:
-    ldr w25, [x20, w24, SXTW #2]  // Cargar elemento actual
+    adrp x0, format_int
+    add x0, x0, :lo12:format_int
+    ldr w1, [x19, w21, SXTW #2]  // Cargar elemento actual
+    bl printf
+    
+    add w21, w21, #1
+    b print_loop
+    
+end_print:
+    // Nueva línea después de imprimir array
+    adrp x0, newline
+    add x0, x0, :lo12:newline
+    bl printf
+    
+    // Inicializar variables para búsqueda
+    ldr w22, [x19]              // w22 = primer máximo
+    mov w23, w22                // w23 = segundo máximo
+    mov w21, #1                 // w21 = índice para recorrer
+    
+find_loop:
+    cmp w21, w20                // Comparar con tamaño del array
+    beq show_result
+    
+    ldr w24, [x19, w21, SXTW #2]  // w24 = elemento actual
     
     // Comparar con máximo actual
-    cmp w25, w22
-    b.le no_es_max       // Si es menor o igual, saltar
-    mov w23, w22         // El antiguo máximo se convierte en segundo
-    mov w22, w25         // Actualizar máximo
-    b continuar_max
-
-no_es_max:
-    // Comparar con segundo máximo
-    cmp w25, w23
-    b.le continuar_max   // Si es menor o igual, saltar
-    cmp w25, w22
-    b.eq continuar_max   // Si es igual al máximo, saltar
-    mov w23, w25         // Actualizar segundo máximo
-
-continuar_max:
-    add w24, w24, #1     // Incrementar índice
-    cmp w24, w21         // Comparar con tamaño
-    b.lt encontrar_max_loop
-
-    // Verificar si encontramos un segundo máximo válido
-    cmp w22, w23
-    b.eq no_segundo_max
-
-    // Mostrar resultados
-    adr x0, msg_max
-    mov w1, w22
-    bl printf
+    cmp w24, w22
+    blt check_second            // Si es menor, ver si es segundo máximo
     
-    adr x0, msg_second
-    mov w1, w23
-    bl printf
-    b menu_loop
-
-no_segundo_max:
-    adr x0, msg_error
-    bl printf
-    b menu_loop
-
-mostrar_arreglo:
-    adr x0, msg_array
-    bl printf
+    // Actualizar máximos
+    mov w23, w22               // Anterior máximo pasa a ser segundo
+    mov w22, w24              // Nuevo máximo encontrado
+    b next_iter
     
-    adr x20, array
-    adr x21, array_size
-    ldr w21, [x21]
-    mov w22, #0          // índice
-
-mostrar_loop:
-    ldr w1, [x20, w22, SXTW #2]
-    adr x0, msg_num
-    bl printf
+check_second:
+    cmp w24, w23              // Comparar con segundo máximo
+    ble next_iter            // Si es menor o igual, siguiente iteración
+    mov w23, w24            // Actualizar segundo máximo
     
-    add w22, w22, #1
-    cmp w22, w21
-    b.lt mostrar_loop
+next_iter:
+    add w21, w21, #1
+    b find_loop
     
-    adr x0, msg_newline
+error:
+    adrp x0, msg_error
+    add x0, x0, :lo12:msg_error
     bl printf
-    b menu_loop
-
-fin_programa:
+    mov w0, #1
+    b exit
+    
+show_result:
+    adrp x0, msg_result
+    add x0, x0, :lo12:msg_result
+    mov w1, w23                // Pasar segundo máximo como argumento
+    bl printf
     mov w0, #0
-    ldp x29, x30, [sp], 16
+    
+exit:
+    // Epílogo
+    ldp x29, x30, [sp], #16
     ret
