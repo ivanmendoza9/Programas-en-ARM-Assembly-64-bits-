@@ -9,178 +9,98 @@
  * Ejecución:    ./decimal_to_hex
  =========================================================*/
 
-/*=========================================================
- * Código equivalente en C:
- * ---------------------------------------------------------
- * #include <stdio.h>
- * 
- * char hex_chars[] = "0123456789ABCDEF";
- * char hex_array[32];
- * int result_length = 0;
- * 
- * void decimal_to_hex(int decimal) {
- *     if (decimal == 0) {
- *         hex_array[0] = '0';
- *         result_length = 1;
- *         return;
- *     }
- *     result_length = 0;
- *     while (decimal > 0) {
- *         hex_array[result_length++] = hex_chars[decimal % 16];
- *         decimal /= 16;
- *     }
- *     // Invertir el array para obtener el valor correcto
- *     for (int i = 0; i < result_length / 2; i++) {
- *         char temp = hex_array[i];
- *         hex_array[i] = hex_array[result_length - i - 1];
- *         hex_array[result_length - i - 1] = temp;
- *     }
- * }
- * 
- * char get_hex_char(int index) {
- *     if (index < 0 || index >= result_length) {
- *         return '\0';  // índice inválido
- *     }
- *     return hex_array[index];
- * }
- * 
- * int get_length() {
- *     return result_length;
- * }
- * ---------------------------------------------------------
- =========================================================*/
+/*
+#include <stdio.h>   // Biblioteca estándar para entrada/salida
+
+// Definición de cadenas (equivalente a la sección .data en ensamblador)
+const char *prompt = "Ingrese un numero decimal: ";
+const char *result_msg = "El numero en hexadecimal es: ";
+const char *format_input = "%ld";    // Formato para leer un long
+const char *format_hex = "0x%X\n";  // Formato para imprimir en hexadecimal
+const char *newline = "\n";
+const char *error_msg = "Error: Ingrese un numero valido\n";
+
+int main() {
+    // Variable para almacenar el número ingresado
+    long number;
+
+    // Imprimir el mensaje para pedir un número decimal
+    printf("%s", prompt);
+
+    // Leer el número ingresado por el usuario
+    // scanf devuelve el número de variables asignadas correctamente
+    if (scanf(format_input, &number) != 1) {
+        // Si la entrada es inválida, mostrar mensaje de error
+        printf("%s", error_msg);
+        return 1;  // Salir con código de error
+    }
+
+    // Imprimir el mensaje con el resultado
+    printf("%s", result_msg);
+
+    // Convertir el número a hexadecimal y mostrarlo
+    printf(format_hex, (unsigned int)number);
+
+    // Salir con éxito
+    return 0;
+}
+*/
 
 .data
-    .align 3
-    hex_array: .skip 32         // Buffer para almacenar resultado hexadecimal
-    result_length: .word 0      // Longitud del resultado
-    hex_chars: .ascii "0123456789ABCDEF"  // Caracteres hexadecimales
+    prompt:         .string "Ingrese un numero decimal: "
+    result_msg:     .string "El numero en hexadecimal es: "
+    format_input:   .string "%ld"          // Formato para leer un long
+    format_hex:     .string "0x%X\n"       // Formato para imprimir en hexadecimal
+    newline:        .string "\n"
+    error_msg:      .string "Error: Ingrese un numero valido\n"
 
 .text
-.align 2
-.global decimal_to_hex
-.global get_hex_char
-.global get_length
+.global main
 
-// Función para convertir decimal a hexadecimal
-// Entrada: x0 = número decimal
-decimal_to_hex:
-    stp     x29, x30, [sp, -48]!
-    mov     x29, sp
-    stp     x19, x20, [sp, 16]
-    stp     x21, x22, [sp, 32]
+// Función principal
+main:
+    // Prólogo
+    stp     x29, x30, [sp, #-16]!   // Guardar frame pointer y link register
+    mov     x29, sp                  // Actualizar frame pointer
 
-    mov     x19, x0            // Guardar número original
+    // Reservar espacio para variable local
+    sub     sp, sp, #16             // 16 bytes para almacenar el número
     
-    // Reiniciar contador de longitud
-    adrp    x0, result_length
-    add     x0, x0, :lo12:result_length
-    str     wzr, [x0]
-    
-    // Si el número es 0, manejar caso especial
-    cbnz    x19, conversion_loop
-    
-    // Caso especial para 0
-    adrp    x0, hex_array
-    add     x0, x0, :lo12:hex_array
-    mov     w1, '0'
-    strb    w1, [x0]
-    
-    adrp    x0, result_length
-    add     x0, x0, :lo12:result_length
-    mov     w1, #1
-    str     w1, [x0]
-    b       end_conversion
+    // Imprimir prompt
+    adr     x0, prompt
+    bl      printf
 
-conversion_loop:
-    // Mientras el número no sea 0
-    cbz     x19, reverse_result
+    // Leer número decimal
+    adr     x0, format_input        // Formato para scanf
+    mov     x1, sp                  // Dirección donde guardar el número
+    bl      scanf
     
-    // Obtener residuo (número & 0xF)
-    and     x20, x19, #0xF
-    
-    // Obtener carácter hexadecimal correspondiente
-    adrp    x21, hex_chars
-    add     x21, x21, :lo12:hex_chars
-    ldrb    w20, [x21, x20]
-    
-    // Guardar carácter en el array
-    adrp    x21, result_length
-    add     x21, x21, :lo12:result_length
-    ldr     w22, [x21]
-    
-    adrp    x0, hex_array
-    add     x0, x0, :lo12:hex_array
-    strb    w20, [x0, x22]
-    
-    // Incrementar longitud
-    add     w22, w22, #1
-    str     w22, [x21]
-    
-    // Dividir número entre 16
-    lsr     x19, x19, #4
-    
-    b       conversion_loop
+    // Verificar si la lectura fue exitosa
+    cmp     x0, #1
+    b.ne    error_input
 
-reverse_result:
-    // Invertir el resultado ya que se generó al revés
-    adrp    x0, hex_array
-    add     x0, x0, :lo12:hex_array
-    adrp    x1, result_length
-    add     x1, x1, :lo12:result_length
-    ldr     w1, [x1]           // w1 = longitud
-    
-    mov     x2, #0             // índice inicio
-    sub     w3, w1, #1         // índice final
-    
-reverse_loop:
-    cmp     w2, w3
-    b.ge    end_conversion
-    
-    // Intercambiar caracteres
-    ldrb    w4, [x0, x2]
-    ldrb    w5, [x0, x3]
-    strb    w5, [x0, x2]
-    strb    w4, [x0, x3]
-    
-    add     w2, w2, #1
-    sub     w3, w3, #1
-    b       reverse_loop
+    // Imprimir mensaje de resultado
+    adr     x0, result_msg
+    bl      printf
 
-end_conversion:
-    ldp     x19, x20, [sp, 16]
-    ldp     x21, x22, [sp, 32]
-    ldp     x29, x30, [sp], 48
-    ret
-
-// Función para obtener un carácter del resultado
-// Entrada: x0 = índice
-// Salida: x0 = carácter en esa posición
-get_hex_char:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
+    // Cargar el número ingresado
+    ldr     x1, [sp]
     
-    adrp    x1, result_length
-    add     x1, x1, :lo12:result_length
-    ldr     w1, [x1]
-    cmp     w0, w1
-    b.ge    invalid_index
+    // Imprimir en hexadecimal
+    adr     x0, format_hex
+    bl      printf
     
-    adrp    x1, hex_array
-    add     x1, x1, :lo12:hex_array
-    ldrb    w0, [x1, x0]
-    
-    ldp     x29, x30, [sp], 16
-    ret
+    mov     w0, #0                  // Retornar 0
+    b       end
 
-invalid_index:
-    mov     x0, #0
-    ldp     x29, x30, [sp], 16
-    ret
+error_input:
+    // Manejar error de entrada
+    adr     x0, error_msg
+    bl      printf
+    mov     w0, #1                  // Retornar 1 para indicar error
 
-// Función para obtener la longitud del resultado
-get_length:
-    adrp    x0, result_length
-    add     x0, x0, :lo12:result_length
-    ldr     w0, [x0]
+end:
+    // Epílogo
+    add     sp, sp, #16             // Liberar espacio local
+    ldp     x29, x30, [sp], #16     // Restaurar frame pointer y link register
     ret
