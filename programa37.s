@@ -40,94 +40,177 @@
  =========================================================*/
 
 .data
-    .align 3                    // Alineamiento a 8 bytes
-    stack_array: .skip 800      // Espacio para 100 elementos de 8 bytes
-    stack_count: .word 0        // Contador de elementos
-    .equ MAX_SIZE, 100         // Constante para tamaño máximo
+    msg_menu: 
+        .string "\nOperaciones de Pila\n"
+        .string "1. Push (Insertar)\n"
+        .string "2. Pop (Eliminar)\n"
+        .string "3. Peek (Ver tope)\n"
+        .string "4. Mostrar pila\n"
+        .string "5. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_push: .string "Ingrese valor a insertar: "
+    msg_pop: .string "Elemento eliminado: %d\n"
+    msg_peek: .string "Elemento en el tope: %d\n"
+    msg_empty: .string "La pila está vacía\n"
+    msg_full: .string "La pila está llena\n"
+    msg_stack: .string "Contenido de la pila: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Pila y variables
+    stack: .skip 40       // Espacio para 10 elementos (4 bytes c/u)
+    stack_size: .word 10  // Tamaño máximo de la pila
+    top: .word -1         // Índice del tope de la pila
+    opcion: .word 0
+    valor: .word 0
 
 .text
+.global main
 .align 2
-.global init_pila
-.global push
-.global pop
-.global is_empty
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
 
-// Función para inicializar la pila
-init_pila:
-    stp     x29, x30, [sp, -16]!   // Guardar frame pointer y link register
-    mov     x29, sp
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
     
-    adrp    x0, stack_count        // Cargar dirección de stack_count
-    add     x0, x0, :lo12:stack_count
-    str     wzr, [x0]              // Inicializar contador a 0
+    cmp w0, #5
+    b.eq fin_programa
     
-    ldp     x29, x30, [sp], 16
-    ret
+    cmp w0, #1
+    b.eq push
+    
+    cmp w0, #2
+    b.eq pop
+    
+    cmp w0, #3
+    b.eq peek_elemento
+    
+    cmp w0, #4
+    b.eq mostrar_pila
+    
+    b menu_loop
 
-// Función para apilar (push)
 push:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
+    // Verificar si la pila está llena
+    adr x20, top
+    ldr w21, [x20]
+    adr x22, stack_size
+    ldr w22, [x22]
+    sub w22, w22, #1
     
-    // Verificar si hay espacio
-    adrp    x1, stack_count
-    add     x1, x1, :lo12:stack_count
-    ldr     w2, [x1]               // Cargar contador actual
-    cmp     w2, MAX_SIZE
-    b.ge    push_overflow
+    cmp w21, w22
+    b.ge pila_llena
     
-    // Calcular dirección donde guardar
-    adrp    x3, stack_array
-    add     x3, x3, :lo12:stack_array
-    lsl     x4, x2, #3             // Multiplicar índice por 8
-    str     x0, [x3, x4]           // Guardar valor
+    // Leer valor a insertar
+    adr x0, msg_push
+    bl printf
+    adr x0, formato_int
+    adr x1, valor
+    bl scanf
     
-    // Incrementar contador
-    add     w2, w2, #1
-    str     w2, [x1]
+    // Incrementar top y guardar valor
+    adr x20, top
+    ldr w21, [x20]
+    add w21, w21, #1
+    str w21, [x20]
     
-    mov     x0, #0                 // Retorno exitoso
-    ldp     x29, x30, [sp], 16
-    ret
+    adr x20, stack
+    adr x22, valor
+    ldr w22, [x22]
+    str w22, [x20, w21, SXTW #2]
+    
+    b menu_loop
 
-push_overflow:
-    mov     x0, #-1                // Código de error
-    ldp     x29, x30, [sp], 16
-    ret
-
-// Función para desapilar (pop)
 pop:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
+    // Verificar si la pila está vacía
+    adr x20, top
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq pila_vacia
     
-    // Verificar si hay elementos
-    adrp    x1, stack_count
-    add     x1, x1, :lo12:stack_count
-    ldr     w2, [x1]
-    cbz     w2, pop_empty
+    // Obtener elemento del tope
+    adr x20, stack
+    ldr w22, [x20, w21, SXTW #2]
     
-    // Calcular dirección del elemento a extraer
-    sub     w2, w2, #1             // Decrementar contador
-    str     w2, [x1]               // Guardar nuevo contador
+    // Mostrar elemento eliminado
+    adr x0, msg_pop
+    mov w1, w22
+    bl printf
     
-    adrp    x3, stack_array
-    add     x3, x3, :lo12:stack_array
-    lsl     x4, x2, #3             // Multiplicar índice por 8
-    ldr     x0, [x3, x4]           // Cargar valor
+    // Decrementar top
+    adr x20, top
+    ldr w21, [x20]
+    sub w21, w21, #1
+    str w21, [x20]
     
-    ldp     x29, x30, [sp], 16
-    ret
+    b menu_loop
 
-pop_empty:
-    mov     x0, #-1                // Código de error
-    ldp     x29, x30, [sp], 16
-    ret
+peek_elemento:
+    // Verificar si la pila está vacía
+    adr x20, top
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq pila_vacia
+    
+    // Mostrar elemento del tope
+    adr x20, stack
+    ldr w22, [x20, w21, SXTW #2]
+    adr x0, msg_peek
+    mov w1, w22
+    bl printf
+    
+    b menu_loop
 
-// Función para verificar si está vacía
-is_empty:
-    adrp    x1, stack_count
-    add     x1, x1, :lo12:stack_count
-    ldr     w0, [x1]
-    cmp     w0, #0
-    cset    w0, eq                 // Establecer 1 si está vacía, 0 si no
+mostrar_pila:
+    // Verificar si la pila está vacía
+    adr x20, top
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq pila_vacia
+    
+    // Mostrar mensaje
+    adr x0, msg_stack
+    bl printf
+    
+    // Mostrar elementos desde el tope hasta la base
+    mov w22, w21          // w22 será nuestro contador
+    adr x20, stack
+mostrar_loop:
+    ldr w1, [x20, w22, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    sub w22, w22, #1
+    cmp w22, #-1
+    b.ge mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    b menu_loop
+
+pila_vacia:
+    adr x0, msg_empty
+    bl printf
+    b menu_loop
+
+pila_llena:
+    adr x0, msg_full
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
     ret
