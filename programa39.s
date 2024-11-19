@@ -46,106 +46,140 @@
  =========================================================*/
 
 .data
-    .align 3
-    binary_array: .skip 64      // Espacio para 64 bits (suficiente para un long)
-    result_size: .word 0        // Cantidad de bits en el resultado
+    msg_menu: 
+        .string "\nConversor Decimal a Binario\n"
+        .string "1. Convertir número\n"
+        .string "2. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_input: .string "Ingrese un número decimal (positivo): "
+    msg_result: .string "El número %d en binario es: "
+    msg_negative: .string "Por favor ingrese un número positivo\n"
+    msg_bit: .string "%d"
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Variables
+    opcion: .word 0
+    numero: .word 0
+    binary: .skip 32     // Arreglo para almacenar bits (32 bits máximo)
+    binary_size: .word 0
 
 .text
+.global main
 .align 2
-.global decimal_to_binary
-.global get_bit
-.global get_size
 
-// Función para convertir decimal a binario
-// Entrada: x0 = número decimal
-decimal_to_binary:
-    stp     x29, x30, [sp, -32]!
-    mov     x29, sp
-    str     x19, [sp, 16]      // Guardar x19 para usarlo
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
     
-    mov     x19, x0            // Guardar número original en x19
+    cmp w0, #2
+    b.eq fin_programa
     
-    // Reiniciar contador de bits
-    adrp    x0, result_size
-    add     x0, x0, :lo12:result_size
-    str     wzr, [x0]
+    cmp w0, #1
+    b.eq convertir_numero
     
-    // Si el número es 0, manejar caso especial
-    cbnz    x19, conversion_loop
+    b menu_loop
+
+convertir_numero:
+    // Solicitar número
+    adr x0, msg_input
+    bl printf
     
-    // Caso especial para 0
-    adrp    x0, binary_array
-    add     x0, x0, :lo12:binary_array
-    strb    wzr, [x0]
+    // Leer número
+    adr x0, formato_int
+    adr x1, numero
+    bl scanf
     
-    adrp    x0, result_size
-    add     x0, x0, :lo12:result_size
-    mov     w1, #1
-    str     w1, [x0]
-    b       end_conversion
+    // Verificar si es positivo
+    adr x0, numero
+    ldr w0, [x0]
+    cmp w0, #0
+    b.lt numero_negativo
+    
+    // Preparar para conversión
+    mov w19, w0          // Guardar número original
+    adr x20, binary      // Dirección del arreglo de bits
+    mov w21, #0          // Contador de bits
+    
+    // Si el número es 0, manejo especial
+    cmp w19, #0
+    b.eq caso_cero
 
 conversion_loop:
-    // Mientras el número no sea 0
-    cbz     x19, end_conversion
+    // Verificar si el número es 0
+    cmp w19, #0
+    b.eq mostrar_resultado
     
-    // Obtener el bit actual (número & 1)
-    and     w1, w19, #1
+    // Obtener bit actual (número & 1)
+    and w22, w19, #1
     
-    // Obtener índice actual
-    adrp    x2, result_size
-    add     x2, x2, :lo12:result_size
-    ldr     w3, [x2]
-    
-    // Guardar el bit en el array
-    adrp    x4, binary_array
-    add     x4, x4, :lo12:binary_array
-    strb    w1, [x4, x3]
+    // Guardar bit en el arreglo
+    str w22, [x20, w21, SXTW #2]
     
     // Incrementar contador
-    add     w3, w3, #1
-    str     w3, [x2]
+    add w21, w21, #1
     
-    // Dividir número entre 2 (shift right)
-    lsr     x19, x19, #1
+    // Dividir número por 2 (shift right)
+    lsr w19, w19, #1
     
-    b       conversion_loop
+    b conversion_loop
 
-end_conversion:
-    ldr     x19, [sp, 16]      // Restaurar x19
-    ldp     x29, x30, [sp], 32
-    ret
+caso_cero:
+    mov w22, #0
+    str w22, [x20]
+    mov w21, #1
+    b mostrar_resultado
 
-// Función para obtener un bit específico del resultado
-// Entrada: x0 = índice del bit
-// Salida: x0 = valor del bit (0 o 1)
-get_bit:
-    stp     x29, x30, [sp, -16]!
-    mov     x29, sp
+mostrar_resultado:
+    // Guardar tamaño del binario
+    adr x22, binary_size
+    str w21, [x22]
     
-    // Verificar que el índice sea válido
-    adrp    x1, result_size
-    add     x1, x1, :lo12:result_size
-    ldr     w1, [x1]
-    cmp     w0, w1
-    b.ge    invalid_index
+    // Mostrar mensaje inicial
+    adr x0, msg_result
+    adr x1, numero
+    ldr w1, [x1]
+    bl printf
     
-    // Obtener el bit del array
-    adrp    x1, binary_array
-    add     x1, x1, :lo12:binary_array
-    ldrb    w0, [x1, x0]
+    // Mostrar bits en orden inverso
+    sub w21, w21, #1     // Índice del último bit
     
-    ldp     x29, x30, [sp], 16
-    ret
+mostrar_bits:
+    ldr w1, [x20, w21, SXTW #2]
+    adr x0, msg_bit
+    bl printf
+    
+    sub w21, w21, #1
+    cmp w21, #-1
+    b.ge mostrar_bits
+    
+    // Nueva línea
+    adr x0, msg_newline
+    bl printf
+    
+    b menu_loop
 
-invalid_index:
-    mov     x0, #-1            // Retornar -1 para índice inválido
-    ldp     x29, x30, [sp], 16
-    ret
+numero_negativo:
+    adr x0, msg_negative
+    bl printf
+    b menu_loop
 
-// Función para obtener el tamaño del resultado binario
-// Salida: x0 = cantidad de bits
-get_size:
-    adrp    x0, result_size
-    add     x0, x0, :lo12:result_size
-    ldr     w0, [x0]
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
     ret
