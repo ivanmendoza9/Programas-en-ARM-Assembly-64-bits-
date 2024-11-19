@@ -39,86 +39,138 @@
  * ---------------------------------------------------------
  =========================================================*/
 
-.section .text
-.global segundo_mas_grande
-.global _start
+.data
+    msg_menu: 
+        .string "\nBúsqueda del Segundo Elemento más Grande\n"
+        .string "1. Encontrar segundo mayor\n"
+        .string "2. Mostrar arreglo\n"
+        .string "3. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_array: .string "Arreglo actual: "
+    msg_max: .string "El elemento más grande es: %d\n"
+    msg_second: .string "El segundo elemento más grande es: %d\n"
+    msg_error: .string "No existe un segundo elemento más grande (todos son iguales)\n"
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Arreglo y variables
+    array: .word 12, 35, 1, 10, 34, 1, 35, 8, 23, 19  // Arreglo de ejemplo con 10 elementos
+    array_size: .word 10
+    opcion: .word 0
+    max_num: .word 0
+    second_max: .word 0
 
-// Función principal (main)
-_start:
-    // Arreglo de ejemplo
-    adr x0, arreglo       // Dirección del arreglo
-    mov x1, 8             // Tamaño del arreglo (8 elementos)
+.text
+.global main
+.align 2
 
-    // Llamada a segundo_mas_grande
-    bl segundo_mas_grande
-
-    // El resultado está en x0, imprimimos el valor
-    mov x8, #64           // syscall número 64 (write)
-    mov x1, x0            // Resultado a imprimir
-    mov x2, #4            // Longitud del resultado (4 bytes)
-    mov x0, #1            // File descriptor (stdout)
-    svc #0                // Llamada al sistema
-
-    // Salir del programa
-    mov x8, #93           // syscall número 93 (exit)
-    mov x0, #0            // código de salida 0
-    svc #0                // Llamada al sistema para salir
-
-// Arreglo de ejemplo
-arreglo:
-    .quad 3, 1, 4, 1, 5, 9, 2, 6
-
-// Función que encuentra el segundo elemento más grande
-// Entrada: x0 = puntero al arreglo, x1 = tamaño del arreglo
-segundo_mas_grande:
-    stp x29, x30, [sp, -16]!  // Guardar registros
+main:
+    stp x29, x30, [sp, -16]!
     mov x29, sp
 
-    // Inicializar los dos máximos
-    mov x2, -1                 // max1 = -1
-    mov x3, -1                 // max2 = -1
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
 
-    // Bucle para recorrer el arreglo
-    mov x4, 0                  // índice i = 0
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
 
-busqueda_loop:
-    cmp x4, x1                 // Comparar i con tamaño del arreglo
-    bge busqueda_done          // Si i >= tamaño, terminar
-
-    ldr x5, [x0, x4, lsl #3]   // Cargar el elemento en x5 (8 bytes por entero)
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
     
-    // Comparar con max1
-    cmp x5, x2
-    ble comprobar_max2         // Si x5 <= max1, comprobar max2
+    cmp w0, #3
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq encontrar_segundo
+    
+    cmp w0, #2
+    b.eq mostrar_arreglo
+    
+    b menu_loop
 
-    // Actualizar max2 y max1
-    mov x3, x2                 // max2 = max1
-    mov x2, x5                 // max1 = x5
+encontrar_segundo:
+    // Inicializar variables
+    adr x20, array        // Dirección base del arreglo
+    adr x21, array_size
+    ldr w21, [x21]        // Tamaño del arreglo
+    
+    // Encontrar el máximo primero
+    ldr w22, [x20]        // max_num = array[0]
+    mov w23, w22          // second_max = array[0]
+    mov w24, #1           // índice = 1
 
-    b busqueda_continue
+encontrar_max_loop:
+    ldr w25, [x20, w24, SXTW #2]  // Cargar elemento actual
+    
+    // Comparar con máximo actual
+    cmp w25, w22
+    b.le no_es_max       // Si es menor o igual, saltar
+    mov w23, w22         // El antiguo máximo se convierte en segundo
+    mov w22, w25         // Actualizar máximo
+    b continuar_max
 
-comprobar_max2:
-    // Comparar con max2
-    cmp x5, x3
-    ble busqueda_continue      // Si x5 <= max2, continuar
+no_es_max:
+    // Comparar con segundo máximo
+    cmp w25, w23
+    b.le continuar_max   // Si es menor o igual, saltar
+    cmp w25, w22
+    b.eq continuar_max   // Si es igual al máximo, saltar
+    mov w23, w25         // Actualizar segundo máximo
 
-    // Actualizar max2
-    mov x3, x5                 // max2 = x5
+continuar_max:
+    add w24, w24, #1     // Incrementar índice
+    cmp w24, w21         // Comparar con tamaño
+    b.lt encontrar_max_loop
 
-busqueda_continue:
-    add x4, x4, 1              // Incrementar índice
-    b busqueda_loop            // Repetir bucle
+    // Verificar si encontramos un segundo máximo válido
+    cmp w22, w23
+    b.eq no_segundo_max
 
-busqueda_done:
-    // Verificar si max2 se actualizó
-    cmp x3, x2                 // Si max2 es igual a max1, no hay segundo mayor
-    beq no_segundo_mayor
-    mov x0, x3                 // Retornar max2
-    b fin
+    // Mostrar resultados
+    adr x0, msg_max
+    mov w1, w22
+    bl printf
+    
+    adr x0, msg_second
+    mov w1, w23
+    bl printf
+    b menu_loop
 
-no_segundo_mayor:
-    mov x0, -1                 // Retornar -1 si no se encontró segundo mayor
+no_segundo_max:
+    adr x0, msg_error
+    bl printf
+    b menu_loop
 
-fin:
+mostrar_arreglo:
+    adr x0, msg_array
+    bl printf
+    
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    mov w22, #0          // índice
+
+mostrar_loop:
+    ldr w1, [x20, w22, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    add w22, w22, #1
+    cmp w22, w21
+    b.lt mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
     ldp x29, x30, [sp], 16
     ret
